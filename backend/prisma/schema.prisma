@@ -1,0 +1,195 @@
+// Prisma schema for Ride-Hailing System
+// Note: Multi-tenancy is handled via schema-per-tenant approach
+// This schema represents the structure within each tenant schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public", "tenant_default"]
+}
+
+// Master tenant registry (public schema)
+model Tenant {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String   @db.VarChar(255)
+  schemaName String   @unique @map("schema_name") @db.VarChar(100)
+  region     String   @default("default") @db.VarChar(50)
+  config     Json     @default("{}")
+  status     String   @default("ACTIVE") @db.VarChar(20)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("tenants")
+  @@schema("public")
+}
+
+// Rider model
+model Rider {
+  id                   String   @id @default(uuid()) @db.Uuid
+  name                 String   @db.VarChar(255)
+  phone                String   @unique @db.VarChar(20)
+  email                String?  @db.VarChar(255)
+  defaultPaymentMethod String   @default("CASH") @map("default_payment_method") @db.VarChar(50)
+  rating               Decimal  @default(5.0) @db.Decimal(2, 1)
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  rides    Ride[]
+  trips    Trip[]
+  payments Payment[]
+
+  @@map("riders")
+  @@schema("tenant_default")
+}
+
+// Driver model
+model Driver {
+  id                 String    @id @default(uuid()) @db.Uuid
+  name               String    @db.VarChar(255)
+  phone              String    @unique @db.VarChar(20)
+  email              String?   @db.VarChar(255)
+  vehicleNumber      String    @map("vehicle_number") @db.VarChar(50)
+  vehicleType        String    @map("vehicle_type") @db.VarChar(20) // ECONOMY, COMFORT, PREMIUM, XL
+  status             String    @default("OFFLINE") @db.VarChar(20) // OFFLINE, AVAILABLE, BUSY, ON_TRIP
+  rating             Decimal   @default(5.0) @db.Decimal(2, 1)
+  acceptanceRate     Decimal   @default(1.00) @map("acceptance_rate") @db.Decimal(3, 2)
+  lastLocationUpdate DateTime? @map("last_location_update") @db.Timestamptz
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Note: current_location is handled via raw SQL due to PostGIS GEOGRAPHY type
+
+  rides      Ride[]
+  trips      Trip[]
+  rideOffers RideOffer[]
+
+  @@map("drivers")
+  @@schema("tenant_default")
+}
+
+// Ride model (booking request)
+model Ride {
+  id                   String    @id @default(uuid()) @db.Uuid
+  riderId              String    @map("rider_id") @db.Uuid
+  driverId             String?   @map("driver_id") @db.Uuid
+  idempotencyKey       String?   @unique @map("idempotency_key") @db.VarChar(255)
+  pickupLatitude       Decimal   @map("pickup_latitude") @db.Decimal(10, 8)
+  pickupLongitude      Decimal   @map("pickup_longitude") @db.Decimal(11, 8)
+  pickupAddress        String?   @map("pickup_address")
+  destinationLatitude  Decimal   @map("destination_latitude") @db.Decimal(10, 8)
+  destinationLongitude Decimal   @map("destination_longitude") @db.Decimal(11, 8)
+  destinationAddress   String?   @map("destination_address")
+  tier                 String    @db.VarChar(20) // ECONOMY, COMFORT, PREMIUM, XL
+  status               String    @default("PENDING") @db.VarChar(30)
+  paymentMethod        String    @map("payment_method") @db.VarChar(50)
+  estimatedFareMin     Decimal?  @map("estimated_fare_min") @db.Decimal(10, 2)
+  estimatedFareMax     Decimal?  @map("estimated_fare_max") @db.Decimal(10, 2)
+  surgeMultiplier      Decimal   @default(1.00) @map("surge_multiplier") @db.Decimal(3, 2)
+  requestedAt          DateTime  @default(now()) @map("requested_at") @db.Timestamptz
+  driverAssignedAt     DateTime? @map("driver_assigned_at") @db.Timestamptz
+  driverArrivedAt      DateTime? @map("driver_arrived_at") @db.Timestamptz
+  cancelledAt          DateTime? @map("cancelled_at") @db.Timestamptz
+  cancellationReason   String?   @map("cancellation_reason")
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  rider      Rider       @relation(fields: [riderId], references: [id])
+  driver     Driver?     @relation(fields: [driverId], references: [id])
+  trip       Trip?
+  rideOffers RideOffer[]
+
+  @@index([status])
+  @@index([riderId])
+  @@index([driverId])
+  @@map("rides")
+  @@schema("tenant_default")
+}
+
+// Trip model (actual journey)
+model Trip {
+  id              String    @id @default(uuid()) @db.Uuid
+  rideId          String    @unique @map("ride_id") @db.Uuid
+  driverId        String    @map("driver_id") @db.Uuid
+  riderId         String    @map("rider_id") @db.Uuid
+  status          String    @default("NOT_STARTED") @db.VarChar(20) // NOT_STARTED, IN_PROGRESS, PAUSED, COMPLETED
+  startLatitude   Decimal?  @map("start_latitude") @db.Decimal(10, 8)
+  startLongitude  Decimal?  @map("start_longitude") @db.Decimal(11, 8)
+  endLatitude     Decimal?  @map("end_latitude") @db.Decimal(10, 8)
+  endLongitude    Decimal?  @map("end_longitude") @db.Decimal(11, 8)
+  routePolyline   String?   @map("route_polyline")
+  distanceMeters  Int?      @map("distance_meters")
+  durationSeconds Int?      @map("duration_seconds")
+  baseFare        Decimal?  @map("base_fare") @db.Decimal(10, 2)
+  distanceFare    Decimal?  @map("distance_fare") @db.Decimal(10, 2)
+  timeFare        Decimal?  @map("time_fare") @db.Decimal(10, 2)
+  surgeAmount     Decimal?  @map("surge_amount") @db.Decimal(10, 2)
+  taxes           Decimal?  @db.Decimal(10, 2)
+  totalFare       Decimal?  @map("total_fare") @db.Decimal(10, 2)
+  startedAt       DateTime? @map("started_at") @db.Timestamptz
+  pausedAt        DateTime? @map("paused_at") @db.Timestamptz
+  endedAt         DateTime? @map("ended_at") @db.Timestamptz
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  ride    Ride      @relation(fields: [rideId], references: [id])
+  driver  Driver    @relation(fields: [driverId], references: [id])
+  rider   Rider     @relation(fields: [riderId], references: [id])
+  payment Payment?
+
+  @@index([rideId])
+  @@index([status])
+  @@map("trips")
+  @@schema("tenant_default")
+}
+
+// Payment model
+model Payment {
+  id               String    @id @default(uuid()) @db.Uuid
+  tripId           String    @unique @map("trip_id") @db.Uuid
+  riderId          String    @map("rider_id") @db.Uuid
+  idempotencyKey   String?   @unique @map("idempotency_key") @db.VarChar(255)
+  amount           Decimal   @db.Decimal(10, 2)
+  currency         String    @default("INR") @db.VarChar(3)
+  paymentMethod    String    @map("payment_method") @db.VarChar(50)
+  status           String    @default("PENDING") @db.VarChar(20) // PENDING, PROCESSING, COMPLETED, FAILED, REFUNDED
+  pspName          String?   @map("psp_name") @db.VarChar(50)
+  pspTransactionId String?   @map("psp_transaction_id") @db.VarChar(255)
+  pspResponse      Json?     @map("psp_response")
+  initiatedAt      DateTime  @default(now()) @map("initiated_at") @db.Timestamptz
+  completedAt      DateTime? @map("completed_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  trip  Trip  @relation(fields: [tripId], references: [id])
+  rider Rider @relation(fields: [riderId], references: [id])
+
+  @@index([tripId])
+  @@index([status])
+  @@map("payments")
+  @@schema("tenant_default")
+}
+
+// Ride Offer model (for tracking driver offers)
+model RideOffer {
+  id             String    @id @default(uuid()) @db.Uuid
+  rideId         String    @map("ride_id") @db.Uuid
+  driverId       String    @map("driver_id") @db.Uuid
+  offeredAt      DateTime  @default(now()) @map("offered_at") @db.Timestamptz
+  response       String?   @db.VarChar(20) // ACCEPTED, DECLINED, TIMEOUT
+  respondedAt    DateTime? @map("responded_at") @db.Timestamptz
+  timeoutSeconds Int       @default(15) @map("timeout_seconds")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  ride   Ride   @relation(fields: [rideId], references: [id])
+  driver Driver @relation(fields: [driverId], references: [id])
+
+  @@index([rideId])
+  @@index([driverId])
+  @@map("ride_offers")
+  @@schema("tenant_default")
+}
