@@ -92,6 +92,25 @@ class ApiService {
     return response.data;
   }
 
+  async updateDriverStatus(driverId: string, status: 'OFFLINE' | 'AVAILABLE' | 'BUSY' | 'ON_TRIP') {
+    const response = await this.client.put(`/v1/drivers/${driverId}/status`, { status });
+    return response.data;
+  }
+
+  async getDriverTrips(driverId: string, limit?: number) {
+    const response = await this.client.get(`/v1/drivers/${driverId}/trips`, {
+      params: { limit },
+    });
+    return response.data;
+  }
+
+  async getDriverEarnings(driverId: string, startDate?: string, endDate?: string) {
+    const response = await this.client.get(`/v1/drivers/${driverId}/earnings`, {
+      params: { startDate, endDate },
+    });
+    return response.data;
+  }
+
   async acceptRideOffer(offerId: string, driverId: string) {
     const response = await this.client.post(
       `/v1/rides/offers/${offerId}/accept`,

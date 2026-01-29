@@ -91,6 +91,9 @@ async function seedTenant() {
   }
 }
 
+// Demo rider ID that matches frontend
+const DEMO_RIDER_ID = '00000000-0000-0000-0000-000000000002';
+
 async function seedRiders(count: number = 10) {
   console.log(`Creating ${count} demo riders...`);
 
@@ -105,7 +108,28 @@ async function seedRiders(count: number = 10) {
   });
 
   const riders = [];
-  for (let i = 0; i < count; i++) {
+
+  // First, create or update the demo rider with the expected ID
+  const demoRider = await tenantPrisma.rider.upsert({
+    where: { id: DEMO_RIDER_ID },
+    update: {
+      name: 'Demo Rider',
+      email: 'demo@rider.com',
+    },
+    create: {
+      id: DEMO_RIDER_ID,
+      name: 'Demo Rider',
+      phone: `+91${Date.now().toString().slice(-10)}`, // Unique phone based on timestamp
+      email: 'demo@rider.com',
+      defaultPaymentMethod: 'CARD',
+      rating: 4.8,
+    }
+  });
+  riders.push(demoRider);
+  console.log(`✓ Demo rider ready with ID: ${DEMO_RIDER_ID}`);
+
+  // Create additional random riders
+  for (let i = 0; i < count - 1; i++) {
     const rider = await tenantPrisma.rider.create({
       data: {
         name: randomName(),
@@ -119,9 +143,12 @@ async function seedRiders(count: number = 10) {
   }
 
   await tenantPrisma.$disconnect();
-  console.log(`✓ Created ${riders.length} riders`);
+  console.log(`✓ Created ${riders.length} riders total`);
   return riders;
 }
+
+// Demo driver ID that matches frontend
+const DEMO_DRIVER_ID = '00000000-0000-0000-0000-000000000003';
 
 async function seedDrivers(count: number = 20) {
   console.log(`Creating ${count} demo drivers...`);
@@ -136,7 +163,33 @@ async function seedDrivers(count: number = 20) {
   });
 
   const drivers = [];
-  for (let i = 0; i < count; i++) {
+
+  // First, create or update the demo driver with the expected ID
+  const demoLocation = randomLocation(BANGALORE_CENTER, 3); // Close to center
+  const demoDriver = await tenantPrisma.driver.upsert({
+    where: { id: DEMO_DRIVER_ID },
+    update: {
+      name: 'Demo Driver',
+      email: 'driver@demo.com',
+      status: 'AVAILABLE',
+    },
+    create: {
+      id: DEMO_DRIVER_ID,
+      name: 'Demo Driver',
+      phone: `+91${(Date.now() + 1).toString().slice(-10)}`, // Unique phone
+      email: 'driver@demo.com',
+      vehicleNumber: `KA01XX${Date.now().toString().slice(-4)}`, // Unique vehicle number
+      vehicleType: 'ECONOMY',
+      status: 'AVAILABLE',
+      rating: 4.9,
+      acceptanceRate: 0.95,
+    }
+  });
+  drivers.push({ ...demoDriver, location: demoLocation });
+  console.log(`✓ Demo driver ready with ID: ${DEMO_DRIVER_ID}`);
+
+  // Create additional random drivers
+  for (let i = 0; i < count - 1; i++) {
     const location = randomLocation(BANGALORE_CENTER, 10); // Within 10km of center
     const vehicleType = VEHICLE_TYPES[Math.floor(Math.random() * VEHICLE_TYPES.length)];
 
@@ -156,7 +209,7 @@ async function seedDrivers(count: number = 20) {
   }
 
   await tenantPrisma.$disconnect();
-  console.log(`✓ Created ${drivers.length} drivers`);
+  console.log(`✓ Created ${drivers.length} drivers total`);
   return drivers;
 }
 

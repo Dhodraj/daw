@@ -28,13 +28,17 @@ describe('Fare Calculation', () => {
     surgeMultiplier: number = 1.0,
   ) {
     const baseFare = fareConfig.baseFare[tier] || 50;
-    const distanceFare = Math.round(distanceKm * fareConfig.ratePerKm * 100) / 100;
-    const timeFare = Math.round(durationMinutes * fareConfig.ratePerMin * 100) / 100;
+    const distanceFare =
+      Math.round(distanceKm * fareConfig.ratePerKm * 100) / 100;
+    const timeFare =
+      Math.round(durationMinutes * fareConfig.ratePerMin * 100) / 100;
 
     const subtotal = baseFare + distanceFare + timeFare;
-    const surgeAmount = Math.round((subtotal * (surgeMultiplier - 1)) * 100) / 100;
+    const surgeAmount =
+      Math.round(subtotal * (surgeMultiplier - 1) * 100) / 100;
     const subtotalWithSurge = subtotal + surgeAmount;
-    const taxes = Math.round(subtotalWithSurge * fareConfig.taxRate * 100) / 100;
+    const taxes =
+      Math.round(subtotalWithSurge * fareConfig.taxRate * 100) / 100;
     const total = Math.round((subtotalWithSurge + taxes) * 100) / 100;
 
     return {

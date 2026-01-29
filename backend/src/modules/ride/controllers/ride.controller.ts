@@ -10,11 +10,7 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { RideService } from '../services/ride.service';
-import {
-  CreateRideDto,
-  CancelRideDto,
-  AcceptOfferDto,
-} from '../dto/ride.dto';
+import { CreateRideDto, CancelRideDto, AcceptOfferDto } from '../dto/ride.dto';
 import { TenantId } from '../../../shared/decorators/tenant.decorator';
 
 @Controller('v1/rides')

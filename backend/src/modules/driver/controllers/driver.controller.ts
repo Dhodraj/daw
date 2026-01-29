@@ -50,6 +50,38 @@ export class DriverController {
   }
 
   /**
+   * Get driver's trip history
+   * GET /v1/drivers/:id/trips
+   */
+  @Get(':id/trips')
+  async getDriverTrips(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) driverId: string,
+    @Query('limit') limit?: number,
+  ) {
+    return this.driverService.getDriverTrips(tenantId, driverId, limit || 20);
+  }
+
+  /**
+   * Get driver's earnings
+   * GET /v1/drivers/:id/earnings
+   */
+  @Get(':id/earnings')
+  async getDriverEarnings(
+    @TenantId() tenantId: string,
+    @Param('id', ParseUUIDPipe) driverId: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.driverService.getDriverEarnings(
+      tenantId,
+      driverId,
+      startDate ? new Date(startDate) : undefined,
+      endDate ? new Date(endDate) : undefined,
+    );
+  }
+
+  /**
    * Update driver location
    * POST /v1/drivers/:id/location
    *
@@ -76,7 +108,11 @@ export class DriverController {
     @Param('id', ParseUUIDPipe) driverId: string,
     @Body() dto: UpdateDriverStatusDto,
   ) {
-    return this.driverService.updateDriverStatus(tenantId, driverId, dto.status);
+    return this.driverService.updateDriverStatus(
+      tenantId,
+      driverId,
+      dto.status,
+    );
   }
 
   /**

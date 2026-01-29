@@ -5,35 +5,36 @@ A multi-tenant, scalable ride-hailing system built with NestJS, PostgreSQL, Redi
 ## Architecture Overview
 
 ```
-                              CLIENTS
-                  +-------------+-------------+
-                  |             |             |
-            [Rider App]   [Driver App]   [Admin]
-                  |             |             |
-                  +------+------+------+------+
-                         |
-                         v
-                  +-------------+
-                  | API GATEWAY |
-                  | (NestJS)    |
-                  +------+------+
-                         |
-        +----------------+----------------+----------------+
-        |                |                |                |
-        v                v                v                v
-  +-----------+   +-----------+   +-----------+   +-----------+
-  |   RIDE    |   |  DRIVER   |   |   TRIP    |   |  PAYMENT  |
-  |  MODULE   |   |  MODULE   |   |  MODULE   |   |  MODULE   |
-  +-----------+   +-----------+   +-----------+   +-----------+
-        |                |                |                |
-        +----------------+----------------+----------------+
-                         |
-          +--------------+--------------+
-          |                             |
-          v                             v
-  +----------------+           +----------------+
-  |   POSTGRESQL   |           |  REDIS CLUSTER |
-  +----------------+           +----------------+
+                                    CLIENTS (Single React Codebase)
+                  +------------------+------------------+------------------+
+                  |                  |                  |                  |
+            [Rider App]        [Driver App]       [Ops Dashboard]     [Admin]
+            /rider/*           /driver/*            /ops/*
+                  |                  |                  |                  |
+                  +--------+---------+---------+-------+------------------+
+                           |
+                           v
+                    +-------------+
+                    | API GATEWAY |
+                    |  (NestJS)   |
+                    +------+------+
+                           |
+        +------------------+------------------+------------------+
+        |                  |                  |                  |
+        v                  v                  v                  v
+  +-----------+      +-----------+      +-----------+      +-----------+
+  |   RIDE    |      |  DRIVER   |      |   TRIP    |      |  PAYMENT  |
+  |  MODULE   |      |  MODULE   |      |  MODULE   |      |  MODULE   |
+  +-----------+      +-----------+      +-----------+      +-----------+
+        |                  |                  |                  |
+        +------------------+------------------+------------------+
+                           |
+            +--------------+--------------+
+            |                             |
+            v                             v
+    +----------------+           +----------------+
+    |   POSTGRESQL   |           |  REDIS CLUSTER |
+    +----------------+           +----------------+
 ```
 
 ## Tech Stack
@@ -46,11 +47,13 @@ A multi-tenant, scalable ride-hailing system built with NestJS, PostgreSQL, Redi
 - **Real-time**: Socket.io WebSocket
 
 ### Frontend
-- **Framework**: React 18 + TypeScript
-- **Build**: Vite
-- **State**: Zustand
+- **Framework**: React 19 + TypeScript
+- **Build**: Vite 7
+- **State**: Zustand 5
 - **Maps**: Leaflet
 - **Styling**: Tailwind CSS
+- **Animations**: Framer Motion
+- **Architecture**: Multi-app (Rider, Driver, Ops) from single codebase
 
 ## Prerequisites
 
@@ -252,6 +255,8 @@ VITE_WS_URL=http://localhost:3000
 .
 ├── backend/
 │   ├── src/
+│   │   ├── domain/             # Domain layer (DDD)
+│   │   ├── infrastructure/     # Infrastructure (logging, etc.)
 │   │   ├── modules/
 │   │   │   ├── driver/         # Driver APIs
 │   │   │   ├── ride/           # Ride APIs & matching
@@ -266,14 +271,68 @@ VITE_WS_URL=http://localhost:3000
 │       └── schema.prisma
 ├── frontend/
 │   └── src/
-│       ├── components/         # React components
-│       ├── stores/            # Zustand stores
-│       ├── services/          # API & socket services
-│       └── types/             # TypeScript types
+│       ├── components/
+│       │   ├── atoms/          # Basic UI components
+│       │   ├── molecules/      # Composite components
+│       │   ├── templates/      # Layout templates
+│       │   └── guards/         # Route guards
+│       ├── pages/
+│       │   ├── rider/          # Rider app pages
+│       │   ├── driver/         # Driver app pages
+│       │   └── ops/            # Ops dashboard pages
+│       ├── router/             # App route modules
+│       ├── stores/             # Zustand stores
+│       ├── hooks/              # Custom hooks
+│       ├── services/           # API & socket services
+│       └── utils/              # Utility functions
+├── tests/
+│   └── load/                   # k6 load tests
+├── docs/
+│   ├── HLD.md                  # High-Level Design
+│   └── LLD.md                  # Low-Level Design
 ├── scripts/
-│   └── init-db.sql            # DB initialization
+│   └── init-db.sql             # DB initialization
 └── docker-compose.yml
 ```
+
+## Frontend Applications
+
+The frontend is organized as three logical applications deployed from a single codebase:
+
+| Application | Route | Purpose | Key Features |
+|-------------|-------|---------|--------------|
+| **Rider App** | `/rider/*` | Book and track rides | Real-time tracking, fare estimates, payment |
+| **Driver App** | `/driver/*` | Accept and complete rides | Status toggle, request queue, earnings tracking |
+| **Ops Dashboard** | `/ops/*` | System management | Metrics, driver management, alerts, pricing |
+
+### Route Overview
+
+**Rider App** (`/rider/*`):
+- `/rider` - Home (ride booking)
+- `/rider/searching` - Driver matching
+- `/rider/ride/:id/status` - Driver ETA
+- `/rider/ride/:id/in-progress` - Active ride
+- `/rider/ride/:id/completed` - Trip summary
+- `/rider/payments` - Payment methods
+- `/rider/history` - Past rides
+
+**Driver App** (`/driver/*`):
+- `/driver/status` - Online/offline toggle
+- `/driver/requests` - Incoming ride offers
+- `/driver/ride/:id/navigate` - Navigate to pickup
+- `/driver/ride/:id/in-progress` - Active trip
+- `/driver/ride/:id/end-trip` - Complete ride
+- `/driver/earnings` - Income dashboard
+- `/driver/history` - Trip history
+
+**Ops Dashboard** (`/ops/*`):
+- `/ops/overview` - System metrics
+- `/ops/rides` - Ride management
+- `/ops/drivers` - Driver management
+- `/ops/regions` - Region configuration
+- `/ops/surge-pricing` - Dynamic pricing
+- `/ops/payments` - Payment oversight
+- `/ops/alerts` - System alerts
 
 ## Testing
 

@@ -47,25 +47,39 @@ describe('Driver Matching Algorithm', () => {
       const closeDriver = { distance: 100, rating: 4.5, acceptanceRate: 0.9 };
       const farDriver = { distance: 2000, rating: 4.5, acceptanceRate: 0.9 };
 
-      expect(calculateScore(closeDriver)).toBeGreaterThan(calculateScore(farDriver));
+      expect(calculateScore(closeDriver)).toBeGreaterThan(
+        calculateScore(farDriver),
+      );
     });
 
     it('should give higher score to higher-rated drivers', () => {
       const highRated = { distance: 500, rating: 5.0, acceptanceRate: 0.9 };
       const lowRated = { distance: 500, rating: 3.5, acceptanceRate: 0.9 };
 
-      expect(calculateScore(highRated)).toBeGreaterThan(calculateScore(lowRated));
+      expect(calculateScore(highRated)).toBeGreaterThan(
+        calculateScore(lowRated),
+      );
     });
 
     it('should give higher score to drivers with higher acceptance rate', () => {
-      const highAcceptance = { distance: 500, rating: 4.5, acceptanceRate: 1.0 };
+      const highAcceptance = {
+        distance: 500,
+        rating: 4.5,
+        acceptanceRate: 1.0,
+      };
       const lowAcceptance = { distance: 500, rating: 4.5, acceptanceRate: 0.5 };
 
-      expect(calculateScore(highAcceptance)).toBeGreaterThan(calculateScore(lowAcceptance));
+      expect(calculateScore(highAcceptance)).toBeGreaterThan(
+        calculateScore(lowAcceptance),
+      );
     });
 
     it('should cap distance score at 0 for very far drivers', () => {
-      const veryFarDriver = { distance: 10000, rating: 5.0, acceptanceRate: 1.0 };
+      const veryFarDriver = {
+        distance: 10000,
+        rating: 5.0,
+        acceptanceRate: 1.0,
+      };
       const score = calculateScore(veryFarDriver);
 
       // Distance score should be 0, but rating and acceptance still count
@@ -169,14 +183,22 @@ describe('Driver Matching Algorithm', () => {
       const nearbyAverage = { distance: 200, rating: 4.0, acceptanceRate: 0.7 };
       const farExcellent = { distance: 3000, rating: 5.0, acceptanceRate: 1.0 };
 
-      expect(calculateScore(nearbyAverage)).toBeGreaterThan(calculateScore(farExcellent));
+      expect(calculateScore(nearbyAverage)).toBeGreaterThan(
+        calculateScore(farExcellent),
+      );
     });
 
     it('should prefer excellent driver at moderate distance', () => {
       const nearbyPoor = { distance: 100, rating: 3.0, acceptanceRate: 0.5 };
-      const moderateExcellent = { distance: 800, rating: 5.0, acceptanceRate: 1.0 };
+      const moderateExcellent = {
+        distance: 800,
+        rating: 5.0,
+        acceptanceRate: 1.0,
+      };
 
-      expect(calculateScore(moderateExcellent)).toBeGreaterThan(calculateScore(nearbyPoor));
+      expect(calculateScore(moderateExcellent)).toBeGreaterThan(
+        calculateScore(nearbyPoor),
+      );
     });
 
     it('should select best driver from realistic pool', () => {
@@ -184,7 +206,7 @@ describe('Driver Matching Algorithm', () => {
         { driverId: 'a', distance: 300, rating: 4.2, acceptanceRate: 0.85 },
         { driverId: 'b', distance: 150, rating: 4.8, acceptanceRate: 0.92 },
         { driverId: 'c', distance: 600, rating: 4.9, acceptanceRate: 0.95 },
-        { driverId: 'd', distance: 100, rating: 3.8, acceptanceRate: 0.70 },
+        { driverId: 'd', distance: 100, rating: 3.8, acceptanceRate: 0.7 },
         { driverId: 'e', distance: 450, rating: 4.5, acceptanceRate: 0.88 },
       ];
 

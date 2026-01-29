@@ -3,10 +3,20 @@ import { io, Socket } from 'socket.io-client';
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000';
 const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001';
 
+// Generic type for socket event data
+interface SocketEventData {
+  rideId?: string;
+  driverId?: string;
+  status?: string;
+  [key: string]: unknown;
+}
+
+type SocketCallback = (data: SocketEventData) => void;
+
 class SocketService {
   private socket: Socket | null = null;
   private tenantId: string = DEFAULT_TENANT_ID;
-  private listeners: Map<string, Set<(data: any) => void>> = new Map();
+  private listeners: Map<string, Set<SocketCallback>> = new Map();
 
   connect() {
     if (this.socket?.connected) {
@@ -68,7 +78,7 @@ class SocketService {
   }
 
   // Subscribe to ride updates
-  subscribeToRide(rideId: string, callback: (data: any) => void) {
+  subscribeToRide(rideId: string, callback: SocketCallback) {
     if (!this.socket?.connected) {
       this.connect();
     }
@@ -95,7 +105,7 @@ class SocketService {
   }
 
   // Subscribe to driver updates (for driver app)
-  subscribeToDriver(driverId: string, callback: (data: any) => void) {
+  subscribeToDriver(driverId: string, callback: SocketCallback) {
     if (!this.socket?.connected) {
       this.connect();
     }
@@ -113,7 +123,7 @@ class SocketService {
   }
 
   // Subscribe to driver location (for tracking)
-  subscribeToDriverLocation(driverId: string, callback: (data: any) => void) {
+  subscribeToDriverLocation(driverId: string, callback: SocketCallback) {
     if (!this.socket?.connected) {
       this.connect();
     }
@@ -131,23 +141,23 @@ class SocketService {
   }
 
   // Add event listener
-  on(event: string, callback: (data: any) => void) {
+  on(event: string, callback: SocketCallback) {
     this.addListener(event, callback);
     return () => this.removeListener(event, callback);
   }
 
-  private addListener(event: string, callback: (data: any) => void) {
+  private addListener(event: string, callback: SocketCallback) {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
     this.listeners.get(event)?.add(callback);
   }
 
-  private removeListener(event: string, callback: (data: any) => void) {
+  private removeListener(event: string, callback: SocketCallback) {
     this.listeners.get(event)?.delete(callback);
   }
 
-  private notifyListeners(event: string, data: any) {
+  private notifyListeners(event: string, data: SocketEventData) {
     // Notify direct listeners
     this.listeners.get(event)?.forEach((callback) => callback(data));
 
@@ -177,7 +187,7 @@ class SocketService {
       }
 
       const start = Date.now();
-      this.socket.emit('ping', {}, (response: any) => {
+      this.socket.emit('ping', {}, (response: { event?: string }) => {
         if (response.event === 'pong') {
           resolve(Date.now() - start);
         } else {

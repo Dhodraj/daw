@@ -10,7 +10,6 @@ test.describe('Full Ride Booking Flow', () => {
   test.describe('Complete Ride Journey', () => {
     test('should complete full ride flow from booking to completion', async ({ page, rideRequestPage, mapPage }) => {
       // Step 1: Set up progressive mocking for ride status
-      let currentRideStatus = 'SEARCHING';
       let callCount = 0;
 
       await page.route('**/v1/rides', async (route) => {

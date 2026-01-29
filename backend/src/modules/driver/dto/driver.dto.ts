@@ -10,7 +10,10 @@ import {
   Matches,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { DriverStatus, RideTier } from '../../../shared/interfaces/common.interfaces';
+import {
+  DriverStatus,
+  RideTier,
+} from '../../../shared/interfaces/common.interfaces';
 
 // DTO for creating a driver
 export class CreateDriverDto {

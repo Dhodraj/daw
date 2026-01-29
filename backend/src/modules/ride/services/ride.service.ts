@@ -7,6 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { RedisService } from '../../../shared/redis/redis.service';
+import { MetricsService } from '../../../shared/monitoring/metrics.service';
 import { DriverService } from '../../driver/services/driver.service';
 import { CreateRideDto, AcceptOfferDto } from '../dto/ride.dto';
 import {
@@ -37,13 +38,18 @@ export class RideService {
     private readonly redis: RedisService,
     private readonly driverService: DriverService,
     private readonly configService: ConfigService,
+    private readonly metricsService: MetricsService,
   ) {}
 
   /**
    * Create a new ride request
    * POST /v1/rides
    */
-  async createRide(tenantId: string, dto: CreateRideDto, idempotencyKey?: string) {
+  async createRide(
+    tenantId: string,
+    dto: CreateRideDto,
+    idempotencyKey?: string,
+  ) {
     const prismaClient = await this.prisma.forTenant(tenantId);
     const startTime = Date.now();
 
@@ -103,6 +109,14 @@ export class RideService {
     const duration = Date.now() - startTime;
     console.log(`Ride ${ride.id} created in ${duration}ms`);
 
+    // Record metrics
+    this.metricsService.recordRideCreated({
+      rideId: ride.id,
+      tenantId,
+      tier: dto.tier,
+      durationMs: duration,
+    });
+
     return this.mapRideToCreateResponse(ride);
   }
 
@@ -129,7 +143,10 @@ export class RideService {
     // Get driver's current location from Redis if assigned
     let driverLocation = null;
     if (ride.driverId) {
-      driverLocation = await this.redis.getDriverLocation(tenantId, ride.driverId);
+      driverLocation = await this.redis.getDriverLocation(
+        tenantId,
+        ride.driverId,
+      );
     }
 
     return this.mapRideToResponse(ride, driverLocation);
@@ -151,7 +168,13 @@ export class RideService {
     }
 
     // Check if transition is valid
-    if (!canTransition(RideStateTransitions, ride.status as RideStatus, RideStatus.CANCELLED)) {
+    if (
+      !canTransition(
+        RideStateTransitions,
+        ride.status as RideStatus,
+        RideStatus.CANCELLED,
+      )
+    ) {
       throw new BadRequestException(
         `Cannot cancel ride in ${ride.status} status`,
       );
@@ -182,6 +205,14 @@ export class RideService {
       rideId,
       reason,
       timestamp: Date.now(),
+    });
+
+    // Record cancellation metrics
+    this.metricsService.recordRideCancelled({
+      rideId,
+      tenantId,
+      reason,
+      stage: ride.status,
     });
 
     return { id: rideId, status: RideStatus.CANCELLED };
@@ -278,12 +309,15 @@ export class RideService {
     });
 
     // Publish acceptance event
-    this.redis.publish(`tenant:${tenantId}:ride:${offer.rideId}:driver_assigned`, {
-      rideId: offer.rideId,
-      driverId,
-      tripId: result.trip.id,
-      timestamp: Date.now(),
-    });
+    this.redis.publish(
+      `tenant:${tenantId}:ride:${offer.rideId}:driver_assigned`,
+      {
+        rideId: offer.rideId,
+        driverId,
+        tripId: result.trip.id,
+        timestamp: Date.now(),
+      },
+    );
 
     return {
       rideId: offer.rideId,
@@ -345,9 +379,14 @@ export class RideService {
     await this.redis.unlockDriver(tenantId, driverId, offer.rideId);
 
     // Try to find next driver
-    this.findAndAssignDriver(tenantId, offer.rideId, [driverId]).catch((err) => {
-      console.error(`Failed to find next driver for ride ${offer.rideId}:`, err);
-    });
+    this.findAndAssignDriver(tenantId, offer.rideId, [driverId]).catch(
+      (err) => {
+        console.error(
+          `Failed to find next driver for ride ${offer.rideId}:`,
+          err,
+        );
+      },
+    );
 
     return { status: 'declined' };
   }
@@ -445,6 +484,15 @@ export class RideService {
         timestamp: Date.now(),
       });
 
+      // Record matching metrics
+      this.metricsService.recordMatchingAttempt({
+        rideId,
+        tenantId,
+        durationMs: Date.now() - startTime,
+        driversFound: 0,
+        success: false,
+      });
+
       return { status: 'NO_DRIVERS' };
     }
 
@@ -499,11 +547,36 @@ export class RideService {
 
         // Schedule timeout handler
         setTimeout(async () => {
-          await this.handleOfferTimeout(tenantId, offer.id, rideId, driver.driverId);
+          await this.handleOfferTimeout(
+            tenantId,
+            offer.id,
+            rideId,
+            driver.driverId,
+          );
         }, config.offerTimeoutSeconds * 1000);
 
         const duration = Date.now() - startTime;
-        console.log(`Driver ${driver.driverId} offered for ride ${rideId} in ${duration}ms`);
+        console.log(
+          `Driver ${driver.driverId} offered for ride ${rideId} in ${duration}ms`,
+        );
+
+        // Record successful matching metrics
+        this.metricsService.recordMatchingAttempt({
+          rideId,
+          tenantId,
+          durationMs: duration,
+          driversFound: eligibleDrivers.length,
+          success: true,
+        });
+
+        // Record driver offer
+        this.metricsService.recordDriverOffer({
+          offerId: offer.id,
+          rideId,
+          driverId: driver.driverId,
+          tenantId,
+          distance: driver.distance,
+        });
 
         return {
           status: 'OFFER_SENT',
@@ -538,7 +611,9 @@ export class RideService {
       .map((d) => {
         const details = detailsMap.get(d.driverId);
         const rating = parseFloat(details?.rating?.toString() || '5.0');
-        const acceptanceRate = parseFloat(details?.acceptanceRate?.toString() || '1.0');
+        const acceptanceRate = parseFloat(
+          details?.acceptanceRate?.toString() || '1.0',
+        );
 
         // Calculate score (higher is better)
         // Distance: closer is better (max 100 points, decreases by 1 point per 50m)
@@ -609,7 +684,10 @@ export class RideService {
   // Fare Calculation
   // =====================
 
-  private calculateEstimatedFare(dto: CreateRideDto): { min: number; max: number } {
+  private calculateEstimatedFare(dto: CreateRideDto): {
+    min: number;
+    max: number;
+  } {
     const fareConfig = this.configService.get('fare');
 
     // Calculate distance (simple Haversine approximation)

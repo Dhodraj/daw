@@ -69,12 +69,15 @@ export enum ErrorCode {
  */
 export const ErrorMessages: Record<ErrorCode, string> = {
   // General
-  [ErrorCode.INTERNAL_ERROR]: 'An unexpected error occurred. Please try again later.',
+  [ErrorCode.INTERNAL_ERROR]:
+    'An unexpected error occurred. Please try again later.',
   [ErrorCode.VALIDATION_ERROR]: 'The provided data is invalid.',
   [ErrorCode.NOT_FOUND]: 'The requested resource was not found.',
-  [ErrorCode.UNAUTHORIZED]: 'Authentication is required to access this resource.',
+  [ErrorCode.UNAUTHORIZED]:
+    'Authentication is required to access this resource.',
   [ErrorCode.FORBIDDEN]: 'You do not have permission to access this resource.',
-  [ErrorCode.CONFLICT]: 'The request conflicts with the current state of the resource.',
+  [ErrorCode.CONFLICT]:
+    'The request conflicts with the current state of the resource.',
   [ErrorCode.RATE_LIMITED]: 'Too many requests. Please slow down.',
   [ErrorCode.SERVICE_UNAVAILABLE]: 'The service is temporarily unavailable.',
 
@@ -86,38 +89,48 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   // Ride
   [ErrorCode.RIDE_NOT_FOUND]: 'The specified ride was not found.',
   [ErrorCode.RIDE_ALREADY_CANCELLED]: 'This ride has already been cancelled.',
-  [ErrorCode.RIDE_CANNOT_BE_CANCELLED]: 'This ride cannot be cancelled in its current state.',
+  [ErrorCode.RIDE_CANNOT_BE_CANCELLED]:
+    'This ride cannot be cancelled in its current state.',
   [ErrorCode.RIDE_ALREADY_IN_PROGRESS]: 'This ride is already in progress.',
   [ErrorCode.RIDE_ALREADY_COMPLETED]: 'This ride has already been completed.',
-  [ErrorCode.RIDE_INVALID_STATUS_TRANSITION]: 'Invalid status transition for this ride.',
-  [ErrorCode.NO_DRIVERS_AVAILABLE]: 'No drivers are currently available in your area.',
+  [ErrorCode.RIDE_INVALID_STATUS_TRANSITION]:
+    'Invalid status transition for this ride.',
+  [ErrorCode.NO_DRIVERS_AVAILABLE]:
+    'No drivers are currently available in your area.',
 
   // Driver
   [ErrorCode.DRIVER_NOT_FOUND]: 'The specified driver was not found.',
   [ErrorCode.DRIVER_NOT_AVAILABLE]: 'This driver is not available for rides.',
-  [ErrorCode.DRIVER_ALREADY_ASSIGNED]: 'This driver is already assigned to another ride.',
+  [ErrorCode.DRIVER_ALREADY_ASSIGNED]:
+    'This driver is already assigned to another ride.',
   [ErrorCode.DRIVER_LOCATION_STALE]: 'Driver location data is outdated.',
   [ErrorCode.DRIVER_INVALID_STATUS]: 'Invalid driver status.',
 
   // Rider
   [ErrorCode.RIDER_NOT_FOUND]: 'The specified rider was not found.',
-  [ErrorCode.RIDER_ALREADY_EXISTS]: 'A rider with this phone number already exists.',
-  [ErrorCode.RIDER_HAS_ACTIVE_RIDE]: 'You already have an active ride in progress.',
+  [ErrorCode.RIDER_ALREADY_EXISTS]:
+    'A rider with this phone number already exists.',
+  [ErrorCode.RIDER_HAS_ACTIVE_RIDE]:
+    'You already have an active ride in progress.',
 
   // Trip
   [ErrorCode.TRIP_NOT_FOUND]: 'The specified trip was not found.',
   [ErrorCode.TRIP_ALREADY_STARTED]: 'This trip has already started.',
   [ErrorCode.TRIP_ALREADY_ENDED]: 'This trip has already ended.',
-  [ErrorCode.TRIP_CANNOT_START]: 'This trip cannot be started in its current state.',
-  [ErrorCode.TRIP_CANNOT_END]: 'This trip cannot be ended in its current state.',
+  [ErrorCode.TRIP_CANNOT_START]:
+    'This trip cannot be started in its current state.',
+  [ErrorCode.TRIP_CANNOT_END]:
+    'This trip cannot be ended in its current state.',
   [ErrorCode.TRIP_INVALID_STATUS]: 'Invalid trip status.',
 
   // Payment
   [ErrorCode.PAYMENT_NOT_FOUND]: 'The specified payment was not found.',
-  [ErrorCode.PAYMENT_ALREADY_PROCESSED]: 'This payment has already been processed.',
+  [ErrorCode.PAYMENT_ALREADY_PROCESSED]:
+    'This payment has already been processed.',
   [ErrorCode.PAYMENT_FAILED]: 'Payment processing failed. Please try again.',
   [ErrorCode.PAYMENT_INVALID_AMOUNT]: 'The payment amount is invalid.',
-  [ErrorCode.PAYMENT_METHOD_NOT_SUPPORTED]: 'This payment method is not supported.',
+  [ErrorCode.PAYMENT_METHOD_NOT_SUPPORTED]:
+    'This payment method is not supported.',
 
   // Offer
   [ErrorCode.OFFER_NOT_FOUND]: 'The specified ride offer was not found.',
@@ -126,7 +139,8 @@ export const ErrorMessages: Record<ErrorCode, string> = {
   [ErrorCode.OFFER_ALREADY_DECLINED]: 'This offer has already been declined.',
 
   // Idempotency
-  [ErrorCode.IDEMPOTENCY_KEY_REUSED]: 'This idempotency key has already been used.',
+  [ErrorCode.IDEMPOTENCY_KEY_REUSED]:
+    'This idempotency key has already been used.',
 };
 
 /**

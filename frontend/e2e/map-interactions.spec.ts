@@ -14,7 +14,7 @@ test.describe('Map Interactions', () => {
     await mapPage.expectMapLoaded();
   });
 
-  test('should show pickup selection mode indicator when selecting pickup', async ({ page, rideRequestPage, mapPage }) => {
+  test('should show pickup selection mode indicator when selecting pickup', async ({ rideRequestPage, mapPage }) => {
     // Click pickup button
     await rideRequestPage.clickPickupButton();
 
@@ -22,7 +22,7 @@ test.describe('Map Interactions', () => {
     await mapPage.expectPickupSelectionMode();
   });
 
-  test('should show destination selection mode indicator when selecting destination', async ({ page, rideRequestPage, mapPage }) => {
+  test('should show destination selection mode indicator when selecting destination', async ({ rideRequestPage, mapPage }) => {
     // First set pickup
     await rideRequestPage.clickPickupButton();
     await mapPage.clickMapCenter();
@@ -130,21 +130,13 @@ test.describe('Map Interactions', () => {
     await mapPage.expectPopupContains('Destination');
   });
 
-  test('should have zoom controls', async ({ page, mapPage }) => {
+  test('should have zoom controls', async ({ mapPage }) => {
     // We use custom zoom controls instead of Leaflet's default
     // Look for zoom buttons with + and - icons
     await mapPage.expectZoomControlsVisible();
   });
 
-  test('should zoom in when clicking zoom in button', async ({ page, mapPage }) => {
-    // Get initial zoom
-    const initialZoom = await page.evaluate(() => {
-      // @ts-ignore - Leaflet exposes map on window in development
-      const container = document.querySelector('.leaflet-container');
-      // We can check the transform or zoom level through the container classes
-      return container?.className || '';
-    });
-
+  test('should zoom in when clicking zoom in button', async ({ mapPage }) => {
     await mapPage.zoomIn();
 
     // The zoom should have changed (map updates)

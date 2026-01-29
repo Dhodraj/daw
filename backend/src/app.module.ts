@@ -1,9 +1,20 @@
-import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
+import {
+  Module,
+  MiddlewareConsumer,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
+import { LoggerModule } from 'nestjs-pino';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 // Shared module
 import { SharedModule } from './shared/shared.module';
+
+// Infrastructure
+import { pinoLoggerConfig } from './infrastructure/logging/pino.config';
 
 // Feature modules
 import { DriverModule } from './modules/driver/driver.module';
@@ -19,6 +30,13 @@ import { IdempotencyMiddleware } from './shared/middleware/idempotency.middlewar
 
 @Module({
   imports: [
+    LoggerModule.forRoot(pinoLoggerConfig),
+    // Rate limiting: 10 req/sec short, 100 req/min medium, 1000 req/hour long
+    ThrottlerModule.forRoot([
+      { name: 'short', ttl: 1000, limit: 10 },
+      { name: 'medium', ttl: 60000, limit: 100 },
+      { name: 'long', ttl: 3600000, limit: 1000 },
+    ]),
     SharedModule,
     DriverModule,
     RiderModule,
@@ -28,7 +46,14 @@ import { IdempotencyMiddleware } from './shared/middleware/idempotency.middlewar
     NotificationModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    // Global rate limiting guard
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

@@ -28,7 +28,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const requestId = (request.headers['x-request-id'] as string) || uuidv4();
 
     // Build error response
-    const errorResponse = this.buildErrorResponse(exception, request.url, requestId);
+    const errorResponse = this.buildErrorResponse(
+      exception,
+      request.url,
+      requestId,
+    );
     const statusCode = this.getStatusCode(exception);
 
     // Log the error
@@ -151,12 +155,26 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         JSON.stringify(errorLog),
       );
     } else if (statusCode >= 400) {
+      // Extract validation errors if present
+      let validationErrors: string[] | undefined;
+      if (exception instanceof HttpException) {
+        const response = exception.getResponse();
+        if (typeof response === 'object' && response !== null) {
+          const resp = response as Record<string, any>;
+          if (Array.isArray(resp.message)) {
+            validationErrors = resp.message;
+          }
+        }
+      }
+
       // Log client errors at warn level
       this.logger.warn(
         `Client Error: ${request.method} ${request.url}`,
         JSON.stringify({
           ...errorLog,
-          message: exception instanceof Error ? exception.message : String(exception),
+          message:
+            exception instanceof Error ? exception.message : String(exception),
+          ...(validationErrors && { validationErrors }),
         }),
       );
     }

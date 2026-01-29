@@ -29,11 +29,29 @@ export class PrismaService
     }
   }
 
+  // Cache tenant schema names to avoid repeated lookups
+  private tenantSchemaCache: Map<string, string> = new Map();
+
   /**
    * Get a Prisma client configured for a specific tenant schema
    */
   async forTenant(tenantId: string): Promise<PrismaClient> {
-    const schemaName = `tenant_${tenantId}`;
+    // Look up the actual schema name from the tenant table
+    let schemaName = this.tenantSchemaCache.get(tenantId);
+
+    if (!schemaName) {
+      const tenant = await this.tenant.findUnique({
+        where: { id: tenantId },
+        select: { schemaName: true },
+      });
+
+      if (!tenant) {
+        throw new Error(`Tenant not found: ${tenantId}`);
+      }
+
+      schemaName = tenant.schemaName;
+      this.tenantSchemaCache.set(tenantId, schemaName);
+    }
 
     // Check if we already have a client for this tenant
     if (this.tenantClients.has(schemaName)) {

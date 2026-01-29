@@ -60,7 +60,9 @@ export class PaymentService {
     }
 
     if (trip.status !== TripStatus.COMPLETED) {
-      throw new BadRequestException('Payment can only be processed for completed trips');
+      throw new BadRequestException(
+        'Payment can only be processed for completed trips',
+      );
     }
 
     // Check if payment already exists for this trip
@@ -109,7 +111,9 @@ export class PaymentService {
     const updatedPayment = await prismaClient.payment.update({
       where: { id: payment.id },
       data: {
-        status: pspResponse.success ? PaymentStatus.COMPLETED : PaymentStatus.FAILED,
+        status: pspResponse.success
+          ? PaymentStatus.COMPLETED
+          : PaymentStatus.FAILED,
         pspTransactionId: pspResponse.transactionId,
         pspResponse: pspResponse as any,
         completedAt: pspResponse.success ? new Date() : null,
@@ -192,7 +196,7 @@ export class PaymentService {
       data: {
         status: PaymentStatus.REFUNDED,
         pspResponse: {
-          ...(payment.pspResponse as object || {}),
+          ...((payment.pspResponse as object) || {}),
           refund: {
             amount: refundAmount,
             reason: dto.reason,
@@ -221,7 +225,9 @@ export class PaymentService {
    * Mock payment processing
    * Simulates a payment gateway with configurable success/failure rates
    */
-  private async processMockPayment(dto: CreatePaymentDto): Promise<MockPSPResponse> {
+  private async processMockPayment(
+    dto: CreatePaymentDto,
+  ): Promise<MockPSPResponse> {
     // Simulate network latency (50-200ms)
     await this.delay(50 + Math.random() * 150);
 
@@ -242,7 +248,8 @@ export class PaymentService {
         'Network timeout',
         'Invalid card details',
       ];
-      const reason = failureReasons[Math.floor(Math.random() * failureReasons.length)];
+      const reason =
+        failureReasons[Math.floor(Math.random() * failureReasons.length)];
 
       return {
         success: false,
@@ -272,9 +279,10 @@ export class PaymentService {
       pspTransactionId: payment.pspTransactionId,
       createdAt: payment.createdAt,
       completedAt: payment.completedAt,
-      receiptUrl: payment.status === PaymentStatus.COMPLETED
-        ? `/v1/payments/${payment.id}/receipt`
-        : null,
+      receiptUrl:
+        payment.status === PaymentStatus.COMPLETED
+          ? `/v1/payments/${payment.id}/receipt`
+          : null,
     };
   }
 }

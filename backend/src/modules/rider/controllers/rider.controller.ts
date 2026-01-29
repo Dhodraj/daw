@@ -24,10 +24,7 @@ export class RiderController {
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createRider(
-    @TenantId() tenantId: string,
-    @Body() dto: CreateRiderDto,
-  ) {
+  async createRider(@TenantId() tenantId: string, @Body() dto: CreateRiderDto) {
     return this.riderService.createRider(tenantId, dto);
   }
 

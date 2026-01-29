@@ -13,45 +13,75 @@ A multi-tenant, multi-region ride-hailing platform designed to handle:
 ### 2. System Architecture
 
 ```
-                                    CLIENTS
-                    ┌────────────────┴────────────────┐
-                    │                                 │
-              ┌─────┴─────┐                    ┌──────┴──────┐
-              │ Rider App │                    │ Driver App  │
-              │  (React)  │                    │   (React)   │
-              └─────┬─────┘                    └──────┬──────┘
-                    │                                 │
-                    │         WebSocket / REST        │
-                    └────────────────┬────────────────┘
-                                     │
-                              ┌──────┴──────┐
-                              │ API Gateway │
-                              │  (NestJS)   │
-                              └──────┬──────┘
-                                     │
-            ┌────────────────────────┼────────────────────────┐
-            │                        │                        │
-     ┌──────┴──────┐          ┌──────┴──────┐          ┌──────┴──────┐
-     │    Ride     │          │   Driver    │          │    Trip     │
-     │   Module    │          │   Module    │          │   Module    │
-     └──────┬──────┘          └──────┬──────┘          └──────┬──────┘
-            │                        │                        │
-            └────────────────────────┼────────────────────────┘
-                                     │
-                    ┌────────────────┼────────────────┐
-                    │                │                │
-             ┌──────┴──────┐  ┌──────┴──────┐  ┌──────┴──────┐
-             │ PostgreSQL  │  │    Redis    │  │   Bull MQ   │
-             │ (Primary)   │  │  (Cache/Geo)│  │   (Queue)   │
-             └─────────────┘  └─────────────┘  └─────────────┘
+                                         CLIENTS
+            ┌──────────────────────────────┴──────────────────────────────┐
+            │                              │                              │
+    ┌───────┴───────┐             ┌────────┴────────┐            ┌────────┴────────┐
+    │   Rider App   │             │   Driver App    │            │  Ops Dashboard  │
+    │ /rider/* (React)│           │ /driver/* (React)│           │ /ops/* (React)  │
+    └───────┬───────┘             └────────┬────────┘            └────────┬────────┘
+            │                              │                              │
+            │              WebSocket / REST API                           │
+            └──────────────────────────────┬──────────────────────────────┘
+                                           │
+                                    ┌──────┴──────┐
+                                    │ API Gateway │
+                                    │  (NestJS)   │
+                                    └──────┬──────┘
+                                           │
+            ┌──────────────────────────────┼──────────────────────────────┐
+            │                              │                              │
+     ┌──────┴──────┐               ┌───────┴───────┐              ┌───────┴───────┐
+     │    Ride     │               │    Driver     │              │     Trip      │
+     │   Module    │               │    Module     │              │    Module     │
+     └──────┬──────┘               └───────┬───────┘              └───────┬───────┘
+            │                              │                              │
+            └──────────────────────────────┼──────────────────────────────┘
+                                           │
+                          ┌────────────────┼────────────────┐
+                          │                │                │
+                   ┌──────┴──────┐  ┌──────┴──────┐  ┌──────┴──────┐
+                   │ PostgreSQL  │  │    Redis    │  │   Bull MQ   │
+                   │ (Primary)   │  │  (Cache/Geo)│  │   (Queue)   │
+                   └─────────────┘  └─────────────┘  └─────────────┘
 ```
 
 ### 3. Key Components
 
 #### 3.1 Frontend (React + TypeScript)
-- **Technology**: React 18, Vite, Zustand, Leaflet
+- **Technology**: React 19, Vite 7, Zustand, Leaflet, Framer Motion
 - **Real-time**: Socket.io for live updates
-- **Purpose**: Rider booking interface with real-time map
+- **Architecture**: Multi-app segmentation (Rider, Driver, Ops) from single codebase
+
+```
+                    ┌─────────────────────────────────────┐
+                    │       Frontend Application          │
+                    │         (Single Codebase)           │
+                    └─────────────────┬───────────────────┘
+                                      │
+            ┌─────────────────────────┼─────────────────────────┐
+            │                         │                         │
+    ┌───────┴───────┐         ┌───────┴───────┐         ┌───────┴───────┐
+    │   Rider App   │         │  Driver App   │         │ Ops Dashboard │
+    │   /rider/*    │         │  /driver/*    │         │    /ops/*     │
+    └───────────────┘         └───────────────┘         └───────────────┘
+    │               │         │               │         │               │
+    ├─ Home         │         ├─ Status       │         ├─ Overview     │
+    ├─ Searching    │         ├─ Requests     │         ├─ Rides        │
+    ├─ RideStatus   │         ├─ Navigate     │         ├─ Drivers      │
+    ├─ InProgress   │         ├─ InProgress   │         ├─ Regions      │
+    ├─ Completed    │         ├─ EndTrip      │         ├─ SurgePricing │
+    ├─ Payments     │         ├─ Earnings     │         ├─ Payments     │
+    ├─ History      │         └─ History      │         └─ Alerts       │
+    └─ Support      │
+```
+
+**App-Specific Features**:
+| App    | Purpose                 | Theme         | Key Features                                 |
+| ------ | ----------------------- | ------------- | -------------------------------------------- |
+| Rider  | Book rides              | Blue          | Real-time tracking, fare estimates, payment  |
+| Driver | Accept & complete rides | Emerald/Teal  | Status toggle, request queue, earnings       |
+| Ops    | System management       | Violet/Purple | Metrics dashboard, driver management, alerts |
 
 #### 3.2 Backend API (NestJS)
 - **Framework**: NestJS with TypeScript
@@ -209,14 +239,47 @@ Driver App ──▶ POST /drivers/{id}/location ──▶ Redis GEOADD ──�
 
 ### 11. Technology Stack Summary
 
-| Layer            | Technology                                   |
-| ---------------- | -------------------------------------------- |
-| Frontend         | React 18, TypeScript, Vite, Leaflet, Zustand |
-| Backend          | NestJS, TypeScript, Prisma                   |
-| Database         | PostgreSQL 15+                               |
-| Cache            | Redis 7+                                     |
-| Queue            | Bull (Redis-based)                           |
-| Real-time        | Socket.io                                    |
-| Monitoring       | New Relic APM                                |
-| Testing          | Jest, Playwright, k6                         |
-| Containerization | Docker, Docker Compose                       |
+| Layer            | Technology                                                    |
+| ---------------- | ------------------------------------------------------------- |
+| Frontend         | React 19, TypeScript, Vite 7, Leaflet, Zustand, Framer Motion |
+| Backend          | NestJS, TypeScript, Prisma                                    |
+| Database         | PostgreSQL 15+                                                |
+| Cache            | Redis 7+                                                      |
+| Queue            | Bull (Redis-based)                                            |
+| Real-time        | Socket.io                                                     |
+| Monitoring       | New Relic APM, Pino Logging                                   |
+| Testing          | Jest, Playwright, k6                                          |
+| Containerization | Docker, Docker Compose                                        |
+
+### 12. Frontend Application Architecture
+
+#### 12.1 Route Structure
+
+| Path Prefix | Application   | Layout       | Target User      |
+| ----------- | ------------- | ------------ | ---------------- |
+| `/`         | App Selector  | None         | All users        |
+| `/rider/*`  | Rider App     | RiderLayout  | Passengers       |
+| `/driver/*` | Driver App    | DriverLayout | Drivers          |
+| `/ops/*`    | Ops Dashboard | OpsLayout    | Operations/Admin |
+
+#### 12.2 State Management
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Zustand Stores                           │
+├─────────────────┬─────────────────┬─────────────────────────┤
+│   themeStore    │   authStore     │      App-Specific       │
+│   (Shared)      │   (Shared)      │       Stores            │
+├─────────────────┼─────────────────┼─────────────────────────┤
+│ - isDark        │ - user          │ rideStore (Rider)       │
+│ - toggleTheme   │ - token         │ driverStore (Driver)    │
+│                 │ - isAuth        │ opsStore (Ops)          │
+│                 │ - hasRole()     │                         │
+└─────────────────┴─────────────────┴─────────────────────────┘
+```
+
+#### 12.3 Auth & Route Guards
+
+- **AuthGuard**: Protects routes requiring authentication
+- **RoleGuard**: Role-based access control (rider, driver, ops, admin)
+- **Demo Mode**: Pre-configured demo users for each role

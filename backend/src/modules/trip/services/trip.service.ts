@@ -6,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { RedisService } from '../../../shared/redis/redis.service';
+import { MetricsService } from '../../../shared/monitoring/metrics.service';
 import { StartTripDto, EndTripDto } from '../dto/trip.dto';
 import {
   TripStatus,
@@ -22,6 +23,7 @@ export class TripService {
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
     private readonly configService: ConfigService,
+    private readonly metricsService: MetricsService,
   ) {}
 
   /**
@@ -107,7 +109,13 @@ export class TripService {
       return this.mapTripToResponse(trip);
     }
 
-    if (!canTransition(TripStateTransitions, trip.status as TripStatus, TripStatus.COMPLETED)) {
+    if (
+      !canTransition(
+        TripStateTransitions,
+        trip.status as TripStatus,
+        TripStatus.COMPLETED,
+      )
+    ) {
       throw new BadRequestException(`Cannot end trip in ${trip.status} status`);
     }
 
@@ -115,12 +123,19 @@ export class TripService {
     const fare = this.calculateFare(trip, dto);
 
     // Calculate actual distance and duration
-    const distanceMeters = dto.actualDistanceMeters || this.calculateDistanceMeters(
-      parseFloat(trip.startLatitude?.toString() || trip.ride.pickupLatitude.toString()),
-      parseFloat(trip.startLongitude?.toString() || trip.ride.pickupLongitude.toString()),
-      dto.endLocation.latitude,
-      dto.endLocation.longitude,
-    );
+    const distanceMeters =
+      dto.actualDistanceMeters ||
+      this.calculateDistanceMeters(
+        parseFloat(
+          trip.startLatitude?.toString() || trip.ride.pickupLatitude.toString(),
+        ),
+        parseFloat(
+          trip.startLongitude?.toString() ||
+            trip.ride.pickupLongitude.toString(),
+        ),
+        dto.endLocation.latitude,
+        dto.endLocation.longitude,
+      );
 
     const durationSeconds = trip.startedAt
       ? Math.floor((Date.now() - trip.startedAt.getTime()) / 1000)
@@ -166,6 +181,16 @@ export class TripService {
       distance: { meters: distanceMeters },
       duration: { seconds: durationSeconds },
       timestamp: Date.now(),
+    });
+
+    // Record ride completion metrics
+    this.metricsService.recordRideCompleted({
+      rideId: trip.rideId,
+      tenantId,
+      tier: trip.ride.tier,
+      fareAmount: fare.total,
+      distanceMeters,
+      durationSeconds,
     });
 
     return {
@@ -270,8 +295,14 @@ export class TripService {
     const distanceKm = dto.actualDistanceMeters
       ? dto.actualDistanceMeters / 1000
       : this.calculateDistanceKm(
-          parseFloat(trip.startLatitude?.toString() || trip.ride.pickupLatitude.toString()),
-          parseFloat(trip.startLongitude?.toString() || trip.ride.pickupLongitude.toString()),
+          parseFloat(
+            trip.startLatitude?.toString() ||
+              trip.ride.pickupLatitude.toString(),
+          ),
+          parseFloat(
+            trip.startLongitude?.toString() ||
+              trip.ride.pickupLongitude.toString(),
+          ),
           dto.endLocation.latitude,
           dto.endLocation.longitude,
         );
@@ -285,16 +316,22 @@ export class TripService {
     const baseFare = fareConfig.baseFare[tier] || 50;
 
     // Calculate components
-    const distanceFare = Math.round(distanceKm * fareConfig.ratePerKm * 100) / 100;
-    const timeFare = Math.round(durationMinutes * fareConfig.ratePerMin * 100) / 100;
+    const distanceFare =
+      Math.round(distanceKm * fareConfig.ratePerKm * 100) / 100;
+    const timeFare =
+      Math.round(durationMinutes * fareConfig.ratePerMin * 100) / 100;
 
     // Get surge multiplier from ride
-    const surgeMultiplier = parseFloat(trip.ride.surgeMultiplier?.toString() || '1');
+    const surgeMultiplier = parseFloat(
+      trip.ride.surgeMultiplier?.toString() || '1',
+    );
     const subtotal = baseFare + distanceFare + timeFare;
-    const surgeAmount = Math.round((subtotal * (surgeMultiplier - 1)) * 100) / 100;
+    const surgeAmount =
+      Math.round(subtotal * (surgeMultiplier - 1) * 100) / 100;
 
     const subtotalWithSurge = subtotal + surgeAmount;
-    const taxes = Math.round(subtotalWithSurge * fareConfig.taxRate * 100) / 100;
+    const taxes =
+      Math.round(subtotalWithSurge * fareConfig.taxRate * 100) / 100;
     const total = Math.round((subtotalWithSurge + taxes) * 100) / 100;
 
     return {

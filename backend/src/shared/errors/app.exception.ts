@@ -80,8 +80,7 @@ export const AppErrors = {
   forbidden: (message?: string) =>
     new AppException(ErrorCode.FORBIDDEN, message),
 
-  conflict: (message: string) =>
-    new AppException(ErrorCode.CONFLICT, message),
+  conflict: (message: string) => new AppException(ErrorCode.CONFLICT, message),
 
   // Tenant
   tenantNotFound: () => new AppException(ErrorCode.TENANT_NOT_FOUND),
@@ -90,68 +89,132 @@ export const AppErrors = {
 
   // Ride
   rideNotFound: (rideId?: string) =>
-    new AppException(ErrorCode.RIDE_NOT_FOUND, undefined, rideId ? { rideId } : undefined),
+    new AppException(
+      ErrorCode.RIDE_NOT_FOUND,
+      undefined,
+      rideId ? { rideId } : undefined,
+    ),
 
   rideAlreadyCancelled: (rideId?: string) =>
-    new AppException(ErrorCode.RIDE_ALREADY_CANCELLED, undefined, rideId ? { rideId } : undefined),
+    new AppException(
+      ErrorCode.RIDE_ALREADY_CANCELLED,
+      undefined,
+      rideId ? { rideId } : undefined,
+    ),
 
   rideCannotBeCancelled: (currentStatus: string) =>
-    new AppException(ErrorCode.RIDE_CANNOT_BE_CANCELLED, `Ride cannot be cancelled when status is ${currentStatus}`, { currentStatus }),
+    new AppException(
+      ErrorCode.RIDE_CANNOT_BE_CANCELLED,
+      `Ride cannot be cancelled when status is ${currentStatus}`,
+      { currentStatus },
+    ),
 
   rideInvalidStatusTransition: (from: string, to: string) =>
-    new AppException(ErrorCode.RIDE_INVALID_STATUS_TRANSITION, `Cannot transition from ${from} to ${to}`, { from, to }),
+    new AppException(
+      ErrorCode.RIDE_INVALID_STATUS_TRANSITION,
+      `Cannot transition from ${from} to ${to}`,
+      { from, to },
+    ),
 
   noDriversAvailable: () => new AppException(ErrorCode.NO_DRIVERS_AVAILABLE),
 
   // Driver
   driverNotFound: (driverId?: string) =>
-    new AppException(ErrorCode.DRIVER_NOT_FOUND, undefined, driverId ? { driverId } : undefined),
+    new AppException(
+      ErrorCode.DRIVER_NOT_FOUND,
+      undefined,
+      driverId ? { driverId } : undefined,
+    ),
 
   driverNotAvailable: (driverId?: string) =>
-    new AppException(ErrorCode.DRIVER_NOT_AVAILABLE, undefined, driverId ? { driverId } : undefined),
+    new AppException(
+      ErrorCode.DRIVER_NOT_AVAILABLE,
+      undefined,
+      driverId ? { driverId } : undefined,
+    ),
 
   driverAlreadyAssigned: (driverId?: string) =>
-    new AppException(ErrorCode.DRIVER_ALREADY_ASSIGNED, undefined, driverId ? { driverId } : undefined),
+    new AppException(
+      ErrorCode.DRIVER_ALREADY_ASSIGNED,
+      undefined,
+      driverId ? { driverId } : undefined,
+    ),
 
   // Rider
   riderNotFound: (riderId?: string) =>
-    new AppException(ErrorCode.RIDER_NOT_FOUND, undefined, riderId ? { riderId } : undefined),
+    new AppException(
+      ErrorCode.RIDER_NOT_FOUND,
+      undefined,
+      riderId ? { riderId } : undefined,
+    ),
 
   riderAlreadyExists: (phone?: string) =>
-    new AppException(ErrorCode.RIDER_ALREADY_EXISTS, undefined, phone ? { phone } : undefined),
+    new AppException(
+      ErrorCode.RIDER_ALREADY_EXISTS,
+      undefined,
+      phone ? { phone } : undefined,
+    ),
 
   riderHasActiveRide: (riderId?: string, rideId?: string) =>
-    new AppException(ErrorCode.RIDER_HAS_ACTIVE_RIDE, undefined, { riderId, rideId }),
+    new AppException(ErrorCode.RIDER_HAS_ACTIVE_RIDE, undefined, {
+      riderId,
+      rideId,
+    }),
 
   // Trip
   tripNotFound: (tripId?: string) =>
-    new AppException(ErrorCode.TRIP_NOT_FOUND, undefined, tripId ? { tripId } : undefined),
+    new AppException(
+      ErrorCode.TRIP_NOT_FOUND,
+      undefined,
+      tripId ? { tripId } : undefined,
+    ),
 
   tripAlreadyStarted: () => new AppException(ErrorCode.TRIP_ALREADY_STARTED),
   tripAlreadyEnded: () => new AppException(ErrorCode.TRIP_ALREADY_ENDED),
   tripCannotStart: (status: string) =>
-    new AppException(ErrorCode.TRIP_CANNOT_START, `Cannot start trip with status ${status}`, { status }),
+    new AppException(
+      ErrorCode.TRIP_CANNOT_START,
+      `Cannot start trip with status ${status}`,
+      { status },
+    ),
 
   tripCannotEnd: (status: string) =>
-    new AppException(ErrorCode.TRIP_CANNOT_END, `Cannot end trip with status ${status}`, { status }),
+    new AppException(
+      ErrorCode.TRIP_CANNOT_END,
+      `Cannot end trip with status ${status}`,
+      { status },
+    ),
 
   // Payment
   paymentNotFound: (paymentId?: string) =>
-    new AppException(ErrorCode.PAYMENT_NOT_FOUND, undefined, paymentId ? { paymentId } : undefined),
+    new AppException(
+      ErrorCode.PAYMENT_NOT_FOUND,
+      undefined,
+      paymentId ? { paymentId } : undefined,
+    ),
 
-  paymentAlreadyProcessed: () => new AppException(ErrorCode.PAYMENT_ALREADY_PROCESSED),
+  paymentAlreadyProcessed: () =>
+    new AppException(ErrorCode.PAYMENT_ALREADY_PROCESSED),
   paymentFailed: (reason?: string) =>
     new AppException(ErrorCode.PAYMENT_FAILED, reason),
 
   // Offer
   offerNotFound: (offerId?: string) =>
-    new AppException(ErrorCode.OFFER_NOT_FOUND, undefined, offerId ? { offerId } : undefined),
+    new AppException(
+      ErrorCode.OFFER_NOT_FOUND,
+      undefined,
+      offerId ? { offerId } : undefined,
+    ),
 
   offerExpired: () => new AppException(ErrorCode.OFFER_EXPIRED),
-  offerAlreadyAccepted: () => new AppException(ErrorCode.OFFER_ALREADY_ACCEPTED),
-  offerAlreadyDeclined: () => new AppException(ErrorCode.OFFER_ALREADY_DECLINED),
+  offerAlreadyAccepted: () =>
+    new AppException(ErrorCode.OFFER_ALREADY_ACCEPTED),
+  offerAlreadyDeclined: () =>
+    new AppException(ErrorCode.OFFER_ALREADY_DECLINED),
 
   // Idempotency
   idempotencyKeyReused: (key: string) =>
-    new AppException(ErrorCode.IDEMPOTENCY_KEY_REUSED, undefined, { idempotencyKey: key }),
+    new AppException(ErrorCode.IDEMPOTENCY_KEY_REUSED, undefined, {
+      idempotencyKey: key,
+    }),
 };

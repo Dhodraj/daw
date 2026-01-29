@@ -4,8 +4,6 @@ import { Page, Route } from '@playwright/test';
  * Mock API responses for testing
  */
 
-const TENANT_ID = '00000000-0000-0000-0000-000000000001';
-
 // Mock ride data
 export const mockRide = {
   id: 'test-ride-001',
@@ -180,7 +178,7 @@ export async function mockApiError(page: Page, endpoint: string, statusCode: num
 /**
  * Mock WebSocket events (using page.evaluate for testing)
  */
-export async function emitSocketEvent(page: Page, event: string, data: any) {
+export async function emitSocketEvent(page: Page, event: string, data: unknown) {
   await page.evaluate(
     ({ event, data }) => {
       // Dispatch custom event that can be caught by the app

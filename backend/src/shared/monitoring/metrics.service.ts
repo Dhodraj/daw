@@ -14,7 +14,10 @@ interface NewRelicApi {
     handler: () => T | Promise<T>,
     callback?: (err: Error | null, result?: T) => void,
   ): T | Promise<T>;
-  startWebTransaction<T>(url: string, handle: () => T | Promise<T>): T | Promise<T>;
+  startWebTransaction<T>(
+    url: string,
+    handle: () => T | Promise<T>,
+  ): T | Promise<T>;
   getTransaction(): any;
   setTransactionName(name: string): void;
 }
@@ -28,7 +31,9 @@ try {
     newrelic = require('newrelic');
     console.log('New Relic agent loaded successfully');
   } else {
-    console.log('New Relic license key not configured - metrics will be logged only');
+    console.log(
+      'New Relic license key not configured - metrics will be logged only',
+    );
   }
 } catch (error) {
   console.warn('New Relic not available:', error.message);
@@ -252,10 +257,7 @@ export class MetricsService implements OnModuleInit {
   /**
    * Record Redis operation
    */
-  recordRedisOperation(data: {
-    operation: string;
-    durationMs: number;
-  }) {
+  recordRedisOperation(data: { operation: string; durationMs: number }) {
     this.recordMetric(`Custom/Redis/${data.operation}`, data.durationMs);
     if (data.durationMs > 20) {
       this.recordCustomEvent('SlowRedisOperation', {
@@ -330,10 +332,7 @@ export class MetricsService implements OnModuleInit {
   /**
    * Wrap a function with a custom segment for tracing
    */
-  async traceSegment<T>(
-    name: string,
-    handler: () => Promise<T>,
-  ): Promise<T> {
+  async traceSegment<T>(name: string, handler: () => Promise<T>): Promise<T> {
     const startTime = Date.now();
 
     if (newrelic) {

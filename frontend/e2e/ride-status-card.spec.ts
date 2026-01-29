@@ -34,7 +34,7 @@ test.describe('Ride Status Card', () => {
       await page.goto('/');
     });
 
-    test('should show searching status after ride creation', async ({ page, rideRequestPage, mapPage, rideStatusPage }) => {
+    test('should show searching status after ride creation', async ({ page, rideRequestPage, mapPage }) => {
       // Set locations
       await mapPage.waitForMapLoad();
       await rideRequestPage.clickPickupButton();
@@ -48,11 +48,11 @@ test.describe('Ride Status Card', () => {
       // Wait for status card
       await page.waitForTimeout(1000);
 
-      // Should show searching status with spinner
-      await expect(page.locator('text=Finding Driver')).toBeVisible();
+      // Should show searching status with spinner (new: "Finding Your Driver")
+      await expect(page.locator('text=Finding Your Driver')).toBeVisible();
     });
 
-    test('should show cancel button during searching', async ({ page, rideRequestPage, mapPage, rideStatusPage }) => {
+    test('should show cancel button during searching', async ({ page, rideRequestPage, mapPage }) => {
       await mapPage.waitForMapLoad();
       await rideRequestPage.clickPickupButton();
       await mapPage.clickMapOffset(-50, -50);
@@ -101,8 +101,8 @@ test.describe('Ride Status Card', () => {
 
       await page.waitForTimeout(1000);
 
-      // Should show driver assigned status
-      await expect(page.locator('text=Driver Assigned')).toBeVisible();
+      // Should show driver assigned status (new: "Driver En Route")
+      await expect(page.locator('text=Driver En Route')).toBeVisible();
 
       // Should show driver name
       await expect(page.locator('text=Rahul Sharma')).toBeVisible();
@@ -138,11 +138,11 @@ test.describe('Ride Status Card', () => {
 
       await page.waitForTimeout(1000);
 
-      // Should show pickup label
-      await expect(page.locator('text=PICKUP')).toBeVisible();
+      // Should show pickup label (new: "Pickup Point")
+      await expect(page.locator('text=Pickup Point')).toBeVisible();
 
-      // Should show destination label
-      await expect(page.locator('text=DESTINATION')).toBeVisible();
+      // Should show destination label (new: "Drop-off Point")
+      await expect(page.locator('text=Drop-off Point')).toBeVisible();
     });
 
     test('should show fare information', async ({ page, rideRequestPage, mapPage }) => {
@@ -198,7 +198,7 @@ test.describe('Ride Status Card', () => {
 
       await page.waitForTimeout(1000);
 
-      await expect(page.locator('text=Trip Completed')).toBeVisible();
+      await expect(page.locator('text=Ride Completed')).toBeVisible();
     });
 
     test('should show trip summary with fare breakdown', async ({ page, rideRequestPage, mapPage }) => {
@@ -211,15 +211,15 @@ test.describe('Ride Status Card', () => {
 
       await page.waitForTimeout(1000);
 
-      // Should show trip summary
-      await expect(page.locator('text=Trip Summary')).toBeVisible();
+      // Should show trip receipt (new component label)
+      await expect(page.locator('text=Trip Receipt')).toBeVisible();
 
       // Should show fare breakdown
       await expect(page.locator('text=Base Fare')).toBeVisible();
-      await expect(page.locator('text=Distance')).toBeVisible();
-      await expect(page.locator('text=Time')).toBeVisible();
-      await expect(page.locator('text=Taxes')).toBeVisible();
-      await expect(page.locator('text=Total')).toBeVisible();
+      await expect(page.locator('text=Distance Charge')).toBeVisible();
+      await expect(page.locator('text=Time Charge')).toBeVisible();
+      await expect(page.locator('text=Taxes & Fees')).toBeVisible();
+      await expect(page.locator('text=Total Amount')).toBeVisible();
     });
 
     test('should show Book New Ride button when completed', async ({ page, rideRequestPage, mapPage }) => {
@@ -284,7 +284,7 @@ test.describe('Ride Status Card', () => {
 
       await page.waitForTimeout(1000);
 
-      await expect(page.locator('text=Cancelled')).toBeVisible();
+      await expect(page.locator('text=Ride Cancelled')).toBeVisible();
     });
 
     test('should show Book New Ride button when cancelled', async ({ page, rideRequestPage, mapPage }) => {

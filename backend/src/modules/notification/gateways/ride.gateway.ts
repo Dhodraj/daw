@@ -230,7 +230,9 @@ export class RideGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
     this.subscriptions.get(channel).add(client.id);
 
-    console.log(`Client ${client.id} subscribed to driver ${driverId} location`);
+    console.log(
+      `Client ${client.id} subscribed to driver ${driverId} location`,
+    );
     return { status: 'subscribed', driverId };
   }
 

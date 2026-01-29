@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../../shared/database/prisma.service';
 import { RedisService } from '../../../shared/redis/redis.service';
+import { MetricsService } from '../../../shared/monitoring/metrics.service';
 import {
   CreateDriverDto,
   UpdateLocationDto,
@@ -21,6 +22,7 @@ export class DriverService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    private readonly metricsService: MetricsService,
   ) {}
 
   /**
@@ -86,6 +88,8 @@ export class DriverService {
     driverId: string,
     dto: UpdateLocationDto,
   ): Promise<{ acknowledged: boolean }> {
+    const startTime = Date.now();
+
     // First, verify driver exists and get their info (cached or from DB)
     const driver = await this.getDriverBasicInfo(tenantId, driverId);
 
@@ -124,7 +128,9 @@ export class DriverService {
 
     // 3. If driver was offline, update status to available
     if (driver.status === DriverStatus.OFFLINE) {
-      promises.push(this.updateDriverStatus(tenantId, driverId, DriverStatus.AVAILABLE));
+      promises.push(
+        this.updateDriverStatus(tenantId, driverId, DriverStatus.AVAILABLE),
+      );
     }
 
     // Execute all operations in parallel
@@ -140,6 +146,14 @@ export class DriverService {
         speed: dto.speed,
       },
       timestamp: Date.now(),
+    });
+
+    // Record location update metrics
+    const duration = Date.now() - startTime;
+    this.metricsService.recordLocationUpdate({
+      driverId,
+      tenantId,
+      durationMs: duration,
     });
 
     return { acknowledged: true };
@@ -255,13 +269,114 @@ export class DriverService {
     const availableDrivers: Array<{ driverId: string; distance: number }> = [];
 
     for (const driver of nearbyDrivers) {
-      const isLocked = await this.redis.isDriverLocked(tenantId, driver.driverId);
+      const isLocked = await this.redis.isDriverLocked(
+        tenantId,
+        driver.driverId,
+      );
       if (!isLocked) {
         availableDrivers.push(driver);
       }
     }
 
     return availableDrivers;
+  }
+
+  /**
+   * Get driver's trip history
+   */
+  async getDriverTrips(tenantId: string, driverId: string, limit: number = 20) {
+    const prismaClient = await this.prisma.forTenant(tenantId);
+
+    const trips = await prismaClient.trip.findMany({
+      where: { driverId },
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        ride: {
+          select: {
+            id: true,
+            pickupAddress: true,
+            destinationAddress: true,
+            tier: true,
+            surgeMultiplier: true,
+          },
+        },
+        rider: {
+          select: {
+            id: true,
+            name: true,
+            rating: true,
+          },
+        },
+      },
+    });
+
+    return trips.map((trip) => ({
+      id: trip.id,
+      rideId: trip.rideId,
+      status: trip.status,
+      pickup: trip.ride.pickupAddress,
+      dropoff: trip.ride.destinationAddress,
+      tier: trip.ride.tier,
+      fare: trip.totalFare ? parseFloat(trip.totalFare.toString()) : null,
+      distance: trip.distanceMeters,
+      duration: trip.durationSeconds,
+      surgeMultiplier: parseFloat(trip.ride.surgeMultiplier.toString()),
+      rider: {
+        id: trip.rider.id,
+        name: trip.rider.name,
+        rating: parseFloat(trip.rider.rating?.toString() || '5'),
+      },
+      startedAt: trip.startedAt,
+      endedAt: trip.endedAt,
+      createdAt: trip.createdAt,
+    }));
+  }
+
+  /**
+   * Get driver's earnings summary
+   */
+  async getDriverEarnings(
+    tenantId: string,
+    driverId: string,
+    startDate?: Date,
+    endDate?: Date,
+  ) {
+    const prismaClient = await this.prisma.forTenant(tenantId);
+
+    const where: any = {
+      driverId,
+      status: 'COMPLETED',
+    };
+
+    if (startDate || endDate) {
+      where.endedAt = {};
+      if (startDate) where.endedAt.gte = startDate;
+      if (endDate) where.endedAt.lte = endDate;
+    }
+
+    const trips = await prismaClient.trip.findMany({
+      where,
+      select: {
+        totalFare: true,
+        endedAt: true,
+      },
+    });
+
+    const totalEarnings = trips.reduce(
+      (sum, trip) =>
+        sum + (trip.totalFare ? parseFloat(trip.totalFare.toString()) : 0),
+      0,
+    );
+
+    return {
+      totalEarnings,
+      tripCount: trips.length,
+      trips: trips.map((t) => ({
+        fare: t.totalFare ? parseFloat(t.totalFare.toString()) : 0,
+        date: t.endedAt,
+      })),
+    };
   }
 
   private mapDriverToResponse(driver: any) {

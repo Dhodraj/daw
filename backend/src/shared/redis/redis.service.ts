@@ -118,7 +118,7 @@ export class RedisService implements OnModuleDestroy {
     const key = `tenant:${tenantId}:geo:drivers:${tier}`;
 
     // GEOSEARCH key FROMMEMBER member BYRADIUS radius unit [WITHDIST] [ASC|DESC] [COUNT count]
-    const results = await this.client.call(
+    const results = (await this.client.call(
       'GEOSEARCH',
       key,
       'FROMLONLAT',
@@ -131,7 +131,7 @@ export class RedisService implements OnModuleDestroy {
       'ASC',
       'COUNT',
       count.toString(),
-    ) as string[][];
+    )) as string[][];
 
     return results.map((result) => ({
       driverId: result[0],

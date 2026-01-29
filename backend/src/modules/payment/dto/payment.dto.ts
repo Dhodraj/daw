@@ -7,7 +7,10 @@ import {
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { PaymentMethod, PaymentStatus } from '../../../shared/interfaces/common.interfaces';
+import {
+  PaymentMethod,
+  PaymentStatus,
+} from '../../../shared/interfaces/common.interfaces';
 
 // Create Payment DTO
 export class CreatePaymentDto {

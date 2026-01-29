@@ -4,6 +4,15 @@ import type { Ride, Location } from '../types';
 import api from '../services/api';
 import socketService from '../services/socket';
 
+interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+  message?: string;
+}
+
 interface RideState {
   // Current ride
   currentRide: Ride | null;
@@ -79,7 +88,8 @@ export const useRideStore = create<RideState>((set, get) => ({
 
       // Subscribe to updates
       get().subscribeToRideUpdates(ride.id);
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as ApiError;
       set({
         error: error.response?.data?.message || 'Failed to create ride',
         isLoading: false,
@@ -94,7 +104,8 @@ export const useRideStore = create<RideState>((set, get) => ({
     try {
       const ride = await api.getRide(rideId);
       set({ currentRide: ride, isLoading: false });
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as ApiError;
       set({
         error: error.response?.data?.message || 'Failed to fetch ride',
         isLoading: false,
@@ -115,7 +126,8 @@ export const useRideStore = create<RideState>((set, get) => ({
         currentRide: { ...currentRide, status: RideStatus.CANCELLED },
         isLoading: false,
       });
-    } catch (error: any) {
+    } catch (err) {
+      const error = err as ApiError;
       set({
         error: error.response?.data?.message || 'Failed to cancel ride',
         isLoading: false,
@@ -131,23 +143,24 @@ export const useRideStore = create<RideState>((set, get) => ({
       if (!currentRide || currentRide.id !== rideId) return;
 
       // Handle different event types
-      if (data.status) {
+      if (data.status && typeof data.status === 'string') {
         set({
           currentRide: {
             ...currentRide,
-            status: data.status,
+            status: data.status as RideStatus,
           },
         });
       }
 
       // If driver assigned, fetch updated ride to get driver details
-      if (data.driverId && !currentRide.driver) {
+      if (data.driverId && typeof data.driverId === 'string' && !currentRide.driver) {
         get().fetchRide(rideId);
 
         // Subscribe to driver location
         socketService.subscribeToDriverLocation(data.driverId, (locationData) => {
-          if (locationData.location) {
-            get().updateDriverLocation(locationData.location);
+          const location = locationData.location as { latitude: number; longitude: number } | undefined;
+          if (location) {
+            get().updateDriverLocation(location);
           }
         });
       }

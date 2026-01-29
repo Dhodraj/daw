@@ -11,11 +11,11 @@ test.describe('Ride Request Form', () => {
     // Check form title
     await expect(page.locator('text=Book Your Ride')).toBeVisible();
 
-    // Check pickup button
-    await expect(page.locator('text=Pickup Location')).toBeVisible();
+    // Check pickup button (new label: Pickup Point)
+    await expect(page.locator('text=Pickup Point')).toBeVisible();
 
-    // Check destination button
-    await expect(page.locator('text=Drop-off Location')).toBeVisible();
+    // Check destination button (new label: Drop-off Point)
+    await expect(page.locator('text=Drop-off Point')).toBeVisible();
 
     // Check payment options
     await expect(rideRequestPage.getPaymentButton('Cash')).toBeVisible();
@@ -74,7 +74,7 @@ test.describe('Ride Request Form', () => {
     await expect(page.locator('button:has-text("XL")').first()).toBeVisible();
   });
 
-  test('should keep submit button disabled without both locations', async ({ page, rideRequestPage, mapPage }) => {
+  test('should keep submit button disabled without both locations', async ({ rideRequestPage, mapPage }) => {
     // Initially disabled
     await rideRequestPage.expectSubmitDisabled();
 
@@ -87,7 +87,7 @@ test.describe('Ride Request Form', () => {
     await rideRequestPage.expectSubmitDisabled();
   });
 
-  test('should enable submit button when both locations are set', async ({ page, rideRequestPage, mapPage }) => {
+  test('should enable submit button when both locations are set', async ({ rideRequestPage, mapPage }) => {
     // Wait for map to load
     await mapPage.waitForMapLoad();
 

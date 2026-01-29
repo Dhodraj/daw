@@ -14,31 +14,37 @@ export class RideRequestPage extends BasePage {
     return this.page.locator('text=Book Your Ride').locator('..');
   }
 
-  // Pickup location button
+  // Pickup location input
   get pickupButton(): Locator {
-    return this.page.locator('button:has-text("Tap to select on map")').first();
+    return this.page.locator('[data-type="pickup"]').or(
+      this.page.locator('button').filter({ hasText: /Pickup Point/i })
+    );
   }
 
   get pickupButtonSet(): Locator {
     return this.page.locator('[data-testid="pickup-set"]').or(
-      this.page.locator('button').filter({ hasText: /Pickup Location/i }).filter({ has: this.page.locator('svg') })
+      this.page.locator('button').filter({ hasText: /Pickup Point/i }).filter({ has: this.page.locator('svg') })
     );
   }
 
-  // Destination location button
+  // Destination location input
   get destinationButton(): Locator {
-    return this.page.locator('button:has-text("Tap to select on map")').last();
+    return this.page.locator('[data-type="destination"]').or(
+      this.page.locator('button').filter({ hasText: /Drop-off Point/i })
+    );
   }
 
   get destinationButtonSet(): Locator {
     return this.page.locator('[data-testid="destination-set"]').or(
-      this.page.locator('button').filter({ hasText: /Drop-off Location/i }).filter({ has: this.page.locator('svg') })
+      this.page.locator('button').filter({ hasText: /Drop-off Point/i }).filter({ has: this.page.locator('svg') })
     );
   }
 
-  // Ride type selector
+  // Ride type selector (TierSelector component)
   get rideTypeButton(): Locator {
-    return this.page.locator('button:has-text("Economy")').first();
+    return this.page.locator('[data-testid="tier-selector"]').or(
+      this.page.locator('button').filter({ hasText: /Economy|Comfort|Premium|XL/ }).first()
+    );
   }
 
   // Ride tier options
@@ -46,14 +52,16 @@ export class RideRequestPage extends BasePage {
     return this.page.locator(`button:has-text("${tier}")`).last();
   }
 
-  // Payment method buttons
+  // Payment method buttons (PaymentMethodSelector component)
   getPaymentButton(method: 'Cash' | 'Card' | 'Wallet'): Locator {
     return this.page.locator(`button:has-text("${method}")`);
   }
 
   // Submit button
   get requestRideButton(): Locator {
-    return this.page.locator('button[type="submit"]');
+    return this.page.locator('button[type="submit"]').or(
+      this.page.locator('button:has-text("Request Ride")')
+    );
   }
 
   // Loading state
@@ -61,14 +69,14 @@ export class RideRequestPage extends BasePage {
     return this.page.locator('text=Finding Driver...');
   }
 
-  // Error message
+  // Error message (updated for new error styling)
   get errorMessage(): Locator {
-    return this.page.locator('.bg-rose-50');
+    return this.page.locator('.bg-error-50').or(this.page.locator('.bg-rose-50'));
   }
 
   // Error dismiss button
   get errorDismissButton(): Locator {
-    return this.page.locator('.bg-rose-50 button');
+    return this.page.locator('.bg-error-50 button').or(this.page.locator('.bg-rose-50 button'));
   }
 
   // Help section
@@ -79,21 +87,20 @@ export class RideRequestPage extends BasePage {
   // Actions
 
   async clickPickupButton() {
-    // Click the pickup location button which contains "Tap to select on map"
-    const pickupBtn = this.page.locator('button').filter({ hasText: /Pickup Location/i }).filter({ hasText: /Tap to select/i });
+    // Click the pickup location input
+    const pickupBtn = this.page.locator('button').filter({ hasText: /Pickup Point/i });
     await pickupBtn.click();
   }
 
   async clickDestinationButton() {
-    // Click the destination location button which contains "Tap to select on map"
-    const destBtn = this.page.locator('button').filter({ hasText: /Drop-off Location/i }).filter({ hasText: /Tap to select/i });
+    // Click the destination location input
+    const destBtn = this.page.locator('button').filter({ hasText: /Drop-off Point/i });
     await destBtn.click();
   }
 
   async selectTier(tier: 'Economy' | 'Comfort' | 'Premium' | 'XL') {
-    // Open tier dropdown - find the Choose Your Ride section button
-    const tierSelector = this.page.locator('button').filter({ hasText: /Choose Your Ride|Economy|Comfort|Premium|XL/ }).first();
-    await tierSelector.click();
+    // Open tier dropdown
+    await this.rideTypeButton.click();
     // Select tier
     await this.page.locator(`button:has-text("${tier}")`).last().click();
   }
@@ -117,14 +124,14 @@ export class RideRequestPage extends BasePage {
   }
 
   async expectPickupSet() {
-    // Check that pickup button shows coordinates (not "Tap to select on map")
-    const pickupBtn = this.page.locator('button').filter({ hasText: /Pickup Location/i });
+    // Check that pickup shows coordinates (not "Tap to select on map")
+    const pickupBtn = this.page.locator('button').filter({ hasText: /Pickup Point/i });
     await expect(pickupBtn).not.toContainText('Tap to select on map');
   }
 
   async expectDestinationSet() {
-    // Check that destination button shows coordinates (not "Tap to select on map")
-    const destBtn = this.page.locator('button').filter({ hasText: /Drop-off Location/i });
+    // Check that destination shows coordinates (not "Tap to select on map")
+    const destBtn = this.page.locator('button').filter({ hasText: /Drop-off Point/i });
     await expect(destBtn).not.toContainText('Tap to select on map');
   }
 
@@ -148,6 +155,7 @@ export class RideRequestPage extends BasePage {
   }
 
   async expectPaymentSelected(method: 'Cash' | 'Card' | 'Wallet') {
-    await expect(this.getPaymentButton(method)).toHaveClass(/border-primary-500/);
+    // Check for the selected state via ring/border classes
+    await expect(this.getPaymentButton(method)).toHaveClass(/ring-2|border-primary/);
   }
 }

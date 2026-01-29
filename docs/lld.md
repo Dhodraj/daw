@@ -695,6 +695,10 @@ interface ErrorResponse {
 daw/
 ├── backend/
 │   ├── src/
+│   │   ├── domain/                    # Domain layer (DDD)
+│   │   │   └── ride/
+│   │   ├── infrastructure/            # Infrastructure layer
+│   │   │   └── logging/
 │   │   ├── modules/
 │   │   │   ├── driver/
 │   │   │   │   ├── controllers/
@@ -720,14 +724,167 @@ daw/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
+│   │   │   ├── atoms/                 # Basic UI components
+│   │   │   │   ├── Button/
+│   │   │   │   ├── Card/
+│   │   │   │   ├── Input/
+│   │   │   │   └── Skeleton/
+│   │   │   ├── molecules/             # Composite components
+│   │   │   │   ├── AddressAutocomplete/
+│   │   │   │   ├── LocationPicker/
+│   │   │   │   └── RideMap/
+│   │   │   ├── templates/             # Layout templates
+│   │   │   │   ├── RiderLayout.tsx
+│   │   │   │   ├── DriverLayout.tsx
+│   │   │   │   └── OpsLayout.tsx
+│   │   │   ├── guards/                # Route guards
+│   │   │   │   ├── AuthGuard.tsx
+│   │   │   │   └── RoleGuard.tsx
+│   │   │   └── Ride/                  # Legacy ride components
+│   │   ├── pages/
+│   │   │   ├── AppSelectorPage.tsx    # Root app selector
+│   │   │   ├── rider/                 # Rider app pages
+│   │   │   │   ├── HomePage.tsx
+│   │   │   │   ├── SearchingPage.tsx
+│   │   │   │   ├── RideStatusPage.tsx
+│   │   │   │   ├── RideInProgressPage.tsx
+│   │   │   │   ├── RideCompletedPage.tsx
+│   │   │   │   ├── PaymentsPage.tsx
+│   │   │   │   ├── HistoryPage.tsx
+│   │   │   │   ├── SupportPage.tsx
+│   │   │   │   └── LoginPage.tsx
+│   │   │   ├── driver/                # Driver app pages
+│   │   │   │   ├── StatusPage.tsx
+│   │   │   │   ├── RequestsPage.tsx
+│   │   │   │   ├── NavigatePage.tsx
+│   │   │   │   ├── RideInProgressPage.tsx
+│   │   │   │   ├── EndTripPage.tsx
+│   │   │   │   ├── EarningsPage.tsx
+│   │   │   │   ├── HistoryPage.tsx
+│   │   │   │   └── LoginPage.tsx
+│   │   │   └── ops/                   # Ops dashboard pages
+│   │   │       ├── OverviewPage.tsx
+│   │   │       ├── RidesPage.tsx
+│   │   │       ├── DriversPage.tsx
+│   │   │       ├── RegionsPage.tsx
+│   │   │       ├── SurgePricingPage.tsx
+│   │   │       ├── PaymentsPage.tsx
+│   │   │       └── AlertsPage.tsx
+│   │   ├── router/
+│   │   │   ├── index.tsx              # Main router
+│   │   │   ├── rider.routes.tsx       # Rider routes
+│   │   │   ├── driver.routes.tsx      # Driver routes
+│   │   │   ├── ops.routes.tsx         # Ops routes
+│   │   │   └── root.routes.tsx        # Root routes
 │   │   ├── stores/
+│   │   │   ├── themeStore.ts          # Theme state (shared)
+│   │   │   ├── authStore.ts           # Auth state (shared)
+│   │   │   ├── rideStore.ts           # Ride state (rider)
+│   │   │   ├── driverStore.ts         # Driver state (driver)
+│   │   │   └── opsStore.ts            # Ops state (ops)
+│   │   ├── hooks/
+│   │   │   └── useAuth.ts             # Auth hook
 │   │   ├── services/
-│   │   └── App.tsx
-│   └── e2e/
+│   │   │   ├── api.ts                 # REST API client
+│   │   │   └── socket.ts              # WebSocket client
+│   │   ├── utils/
+│   │   │   └── cn.ts                  # Tailwind class merge
+│   │   ├── design-system/             # Design tokens
+│   │   ├── App.tsx
+│   │   └── main.tsx
+│   ├── e2e/                           # Playwright tests
+│   └── public/
 ├── tests/
-│   └── load/
+│   └── load/                          # k6 load tests
 ├── docs/
 │   ├── HLD.md
 │   └── LLD.md
 └── docker-compose.yml
+```
+
+### 10. Frontend Route Specifications
+
+#### 10.1 Rider App Routes
+
+| Route                             | Component          | Description           |
+| --------------------------------- | ------------------ | --------------------- |
+| `/rider`                          | HomePage           | Ride booking with map |
+| `/rider/login`                    | LoginPage          | Auth placeholder      |
+| `/rider/searching`                | SearchingPage      | Driver matching       |
+| `/rider/ride/:rideId/status`      | RideStatusPage     | Driver ETA & location |
+| `/rider/ride/:rideId/in-progress` | RideInProgressPage | Active ride tracking  |
+| `/rider/ride/:rideId/completed`   | RideCompletedPage  | Trip summary & rating |
+| `/rider/payments`                 | PaymentsPage       | Payment methods       |
+| `/rider/history`                  | HistoryPage        | Past rides            |
+| `/rider/support`                  | SupportPage        | Help center           |
+
+#### 10.2 Driver App Routes
+
+| Route                              | Component          | Description            |
+| ---------------------------------- | ------------------ | ---------------------- |
+| `/driver`                          | StatusPage         | Online/offline toggle  |
+| `/driver/login`                    | LoginPage          | Auth placeholder       |
+| `/driver/status`                   | StatusPage         | Driver status control  |
+| `/driver/requests`                 | RequestsPage       | Incoming ride offers   |
+| `/driver/ride/:rideId/navigate`    | NavigatePage       | Navigation to pickup   |
+| `/driver/ride/:rideId/in-progress` | RideInProgressPage | Active trip navigation |
+| `/driver/ride/:rideId/end-trip`    | EndTripPage        | Complete ride & rate   |
+| `/driver/earnings`                 | EarningsPage       | Income dashboard       |
+| `/driver/history`                  | HistoryPage        | Trip history           |
+
+#### 10.3 Ops Dashboard Routes
+
+| Route                | Component        | Description           |
+| -------------------- | ---------------- | --------------------- |
+| `/ops`               | OverviewPage     | System metrics        |
+| `/ops/overview`      | OverviewPage     | Dashboard home        |
+| `/ops/rides`         | RidesPage        | All rides management  |
+| `/ops/drivers`       | DriversPage      | Driver management     |
+| `/ops/regions`       | RegionsPage      | Region configuration  |
+| `/ops/surge-pricing` | SurgePricingPage | Dynamic pricing rules |
+| `/ops/payments`      | PaymentsPage     | Payment oversight     |
+| `/ops/alerts`        | AlertsPage       | System alerts         |
+
+### 11. Frontend State Specifications
+
+#### 11.1 Auth Store
+
+```typescript
+interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (user: User, token: string) => void;
+  logout: () => void;
+  hasRole: (roles: UserRole | UserRole[]) => boolean;
+}
+
+type UserRole = 'rider' | 'driver' | 'ops' | 'admin';
+```
+
+#### 11.2 Driver Store
+
+```typescript
+interface DriverState {
+  status: 'offline' | 'online' | 'busy' | 'on_trip';
+  currentTrip: Trip | null;
+  todayStats: { trips: number; earnings: number; hours: number };
+  pendingRequest: RideRequest | null;
+  setStatus: (status: DriverStatus) => void;
+  acceptRequest: (requestId: string) => void;
+  declineRequest: () => void;
+}
+```
+
+#### 11.3 Ops Store
+
+```typescript
+interface OpsState {
+  metrics: SystemMetrics;
+  alerts: Alert[];
+  selectedRegion: string | null;
+  refreshMetrics: () => Promise<void>;
+  acknowledgeAlert: (alertId: string) => void;
+}
 ```

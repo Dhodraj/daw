@@ -4,104 +4,216 @@
  * Tests ride state transitions and validation logic.
  */
 
-import { RideStatus, RideStateTransitions, canTransition } from '../../../../shared/interfaces/common.interfaces';
+import {
+  RideStatus,
+  RideStateTransitions,
+  canTransition,
+} from '../../../../shared/interfaces/common.interfaces';
 
 describe('Ride Service', () => {
   describe('State Machine', () => {
     describe('Valid transitions from PENDING', () => {
       it('should allow transition to SEARCHING', () => {
-        expect(canTransition(RideStateTransitions, RideStatus.PENDING, RideStatus.SEARCHING)).toBe(true);
+        expect(
+          canTransition(
+            RideStateTransitions,
+            RideStatus.PENDING,
+            RideStatus.SEARCHING,
+          ),
+        ).toBe(true);
       });
 
       it('should allow transition to CANCELLED', () => {
-        expect(canTransition(RideStateTransitions, RideStatus.PENDING, RideStatus.CANCELLED)).toBe(true);
+        expect(
+          canTransition(
+            RideStateTransitions,
+            RideStatus.PENDING,
+            RideStatus.CANCELLED,
+          ),
+        ).toBe(true);
       });
 
       it('should not allow transition to COMPLETED', () => {
-        expect(canTransition(RideStateTransitions, RideStatus.PENDING, RideStatus.COMPLETED)).toBe(false);
+        expect(
+          canTransition(
+            RideStateTransitions,
+            RideStatus.PENDING,
+            RideStatus.COMPLETED,
+          ),
+        ).toBe(false);
       });
 
       it('should not allow transition to IN_PROGRESS', () => {
-        expect(canTransition(RideStateTransitions, RideStatus.PENDING, RideStatus.IN_PROGRESS)).toBe(false);
+        expect(
+          canTransition(
+            RideStateTransitions,
+            RideStatus.PENDING,
+            RideStatus.IN_PROGRESS,
+          ),
+        ).toBe(false);
       });
     });
 
     describe('Valid transitions from SEARCHING', () => {
       it('should allow transition to DRIVER_ASSIGNED', () => {
-        expect(canTransition(RideStateTransitions, RideStatus.SEARCHING, RideStatus.DRIVER_ASSIGNED)).toBe(true);
+        expect(
+          canTransition(
+            RideStateTransitions,
+            RideStatus.SEARCHING,
+            RideStatus.DRIVER_ASSIGNED,
+          ),
+        ).toBe(true);
       });
 
       it('should allow transition to NO_DRIVERS', () => {
-        expect(canTransition(RideStateTransitions, RideStatus.SEARCHING, RideStatus.NO_DRIVERS)).toBe(true);
+        expect(
+          canTransition(
+            RideStateTransitions,
+            RideStatus.SEARCHING,
+            RideStatus.NO_DRIVERS,
+          ),
+        ).toBe(true);
       });
 
       it('should allow transition to CANCELLED', () => {
-        expect(canTransition(RideStateTransitions, RideStatus.SEARCHING, RideStatus.CANCELLED)).toBe(true);
+        expect(
+          canTransition(
+            RideStateTransitions,
+            RideStatus.SEARCHING,
+            RideStatus.CANCELLED,
+          ),
+        ).toBe(true);
       });
 
       it('should not allow transition to COMPLETED', () => {
-        expect(canTransition(RideStateTransitions, RideStatus.SEARCHING, RideStatus.COMPLETED)).toBe(false);
+        expect(
+          canTransition(
+            RideStateTransitions,
+            RideStatus.SEARCHING,
+            RideStatus.COMPLETED,
+          ),
+        ).toBe(false);
       });
     });
 
     describe('Valid transitions from DRIVER_ASSIGNED', () => {
       it('should allow transition to DRIVER_ARRIVED', () => {
-        expect(canTransition(RideStateTransitions, RideStatus.DRIVER_ASSIGNED, RideStatus.DRIVER_ARRIVED)).toBe(true);
+        expect(
+          canTransition(
+            RideStateTransitions,
+            RideStatus.DRIVER_ASSIGNED,
+            RideStatus.DRIVER_ARRIVED,
+          ),
+        ).toBe(true);
       });
 
       it('should allow transition to CANCELLED', () => {
-        expect(canTransition(RideStateTransitions, RideStatus.DRIVER_ASSIGNED, RideStatus.CANCELLED)).toBe(true);
+        expect(
+          canTransition(
+            RideStateTransitions,
+            RideStatus.DRIVER_ASSIGNED,
+            RideStatus.CANCELLED,
+          ),
+        ).toBe(true);
       });
 
       it('should not allow transition to IN_PROGRESS directly', () => {
-        expect(canTransition(RideStateTransitions, RideStatus.DRIVER_ASSIGNED, RideStatus.IN_PROGRESS)).toBe(false);
+        expect(
+          canTransition(
+            RideStateTransitions,
+            RideStatus.DRIVER_ASSIGNED,
+            RideStatus.IN_PROGRESS,
+          ),
+        ).toBe(false);
       });
     });
 
     describe('Valid transitions from DRIVER_ARRIVED', () => {
       it('should allow transition to IN_PROGRESS', () => {
-        expect(canTransition(RideStateTransitions, RideStatus.DRIVER_ARRIVED, RideStatus.IN_PROGRESS)).toBe(true);
+        expect(
+          canTransition(
+            RideStateTransitions,
+            RideStatus.DRIVER_ARRIVED,
+            RideStatus.IN_PROGRESS,
+          ),
+        ).toBe(true);
       });
 
       it('should allow transition to CANCELLED', () => {
-        expect(canTransition(RideStateTransitions, RideStatus.DRIVER_ARRIVED, RideStatus.CANCELLED)).toBe(true);
+        expect(
+          canTransition(
+            RideStateTransitions,
+            RideStatus.DRIVER_ARRIVED,
+            RideStatus.CANCELLED,
+          ),
+        ).toBe(true);
       });
 
       it('should not allow transition to COMPLETED directly', () => {
-        expect(canTransition(RideStateTransitions, RideStatus.DRIVER_ARRIVED, RideStatus.COMPLETED)).toBe(false);
+        expect(
+          canTransition(
+            RideStateTransitions,
+            RideStatus.DRIVER_ARRIVED,
+            RideStatus.COMPLETED,
+          ),
+        ).toBe(false);
       });
     });
 
     describe('Valid transitions from IN_PROGRESS', () => {
       it('should allow transition to COMPLETED', () => {
-        expect(canTransition(RideStateTransitions, RideStatus.IN_PROGRESS, RideStatus.COMPLETED)).toBe(true);
+        expect(
+          canTransition(
+            RideStateTransitions,
+            RideStatus.IN_PROGRESS,
+            RideStatus.COMPLETED,
+          ),
+        ).toBe(true);
       });
 
       it('should not allow transition to CANCELLED', () => {
-        expect(canTransition(RideStateTransitions, RideStatus.IN_PROGRESS, RideStatus.CANCELLED)).toBe(false);
+        expect(
+          canTransition(
+            RideStateTransitions,
+            RideStatus.IN_PROGRESS,
+            RideStatus.CANCELLED,
+          ),
+        ).toBe(false);
       });
 
       it('should not allow transition to SEARCHING', () => {
-        expect(canTransition(RideStateTransitions, RideStatus.IN_PROGRESS, RideStatus.SEARCHING)).toBe(false);
+        expect(
+          canTransition(
+            RideStateTransitions,
+            RideStatus.IN_PROGRESS,
+            RideStatus.SEARCHING,
+          ),
+        ).toBe(false);
       });
     });
 
     describe('Terminal states', () => {
       it('should not allow any transition from COMPLETED', () => {
         Object.values(RideStatus).forEach((status) => {
-          expect(canTransition(RideStateTransitions, RideStatus.COMPLETED, status)).toBe(false);
+          expect(
+            canTransition(RideStateTransitions, RideStatus.COMPLETED, status),
+          ).toBe(false);
         });
       });
 
       it('should not allow any transition from CANCELLED', () => {
         Object.values(RideStatus).forEach((status) => {
-          expect(canTransition(RideStateTransitions, RideStatus.CANCELLED, status)).toBe(false);
+          expect(
+            canTransition(RideStateTransitions, RideStatus.CANCELLED, status),
+          ).toBe(false);
         });
       });
 
       it('should not allow any transition from NO_DRIVERS', () => {
         Object.values(RideStatus).forEach((status) => {
-          expect(canTransition(RideStateTransitions, RideStatus.NO_DRIVERS, status)).toBe(false);
+          expect(
+            canTransition(RideStateTransitions, RideStatus.NO_DRIVERS, status),
+          ).toBe(false);
         });
       });
     });
@@ -144,7 +256,7 @@ describe('Ride Service', () => {
 
     it('should handle cross-hemisphere calculations', () => {
       // New York to London (~5570km)
-      const distance = calculateDistanceKm(40.7128, -74.0060, 51.5074, -0.1278);
+      const distance = calculateDistanceKm(40.7128, -74.006, 51.5074, -0.1278);
       expect(distance).toBeGreaterThan(5500);
       expect(distance).toBeLessThan(5700);
     });
@@ -224,7 +336,7 @@ describe('Ride Service', () => {
       let hash = 0;
       for (let i = 0; i < data.length; i++) {
         const char = data.charCodeAt(i);
-        hash = ((hash << 5) - hash) + char;
+        hash = (hash << 5) - hash + char;
         hash = hash & hash;
       }
       return hash.toString(16);
@@ -240,7 +352,7 @@ describe('Ride Service', () => {
 
     it('should generate different hash for different bodies', () => {
       const body1 = { pickupLat: 12.97, pickupLng: 77.59 };
-      const body2 = { pickupLat: 12.98, pickupLng: 77.60 };
+      const body2 = { pickupLat: 12.98, pickupLng: 77.6 };
       const hash1 = hashRequest('/v1/rides', 'POST', body1);
       const hash2 = hashRequest('/v1/rides', 'POST', body2);
 
